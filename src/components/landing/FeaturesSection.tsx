@@ -1,0 +1,73 @@
+import { Sparkles, Globe, Smartphone, Zap, Palette, Share2 } from 'lucide-react';
+
+const features = [
+  {
+    icon: Sparkles,
+    color: 'bg-blue-50 text-blue-600',
+    title: 'AI-Powered Content',
+    description: 'Konten website dibuat otomatis oleh AI: judul, deskripsi, produk, hingga informasi kontak — semua relevan dengan bisnis Anda.',
+  },
+  {
+    icon: Zap,
+    color: 'bg-amber-50 text-amber-600',
+    title: 'Siap dalam 30 Detik',
+    description: 'Tidak perlu coding atau desain. Cukup isi form singkat dan website Anda siap tampil dalam hitungan detik.',
+  },
+  {
+    icon: Smartphone,
+    color: 'bg-green-50 text-green-600',
+    title: 'Responsif di Semua Perangkat',
+    description: 'Website otomatis menyesuaikan tampilan di ponsel, tablet, maupun desktop — tanpa konfigurasi tambahan.',
+  },
+  {
+    icon: Palette,
+    color: 'bg-pink-50 text-pink-600',
+    title: 'Desain Sesuai Kategori',
+    description: 'Skema warna dan gaya visual dipilih otomatis berdasarkan kategori bisnis Anda untuk tampilan yang profesional.',
+  },
+  {
+    icon: Globe,
+    color: 'bg-cyan-50 text-cyan-600',
+    title: 'URL Unik Instan',
+    description: 'Setiap website mendapat URL unik yang bisa langsung dibagikan ke pelanggan, tanpa perlu beli domain.',
+  },
+  {
+    icon: Share2,
+    color: 'bg-violet-50 text-violet-600',
+    title: 'Mudah Dibagikan',
+    description: 'Salin link website Anda dan bagikan via WhatsApp, Instagram, atau media sosial lainnya dengan mudah.',
+  },
+];
+
+export default function FeaturesSection() {
+  return (
+    <section id="features" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <span className="inline-block text-blue-600 font-semibold text-sm uppercase tracking-wider mb-3">Fitur Unggulan</span>
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+            Semua yang Anda butuhkan
+          </h2>
+          <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+            Dari generasi konten hingga publish — kami tangani semuanya untuk Anda.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature) => (
+            <div
+              key={feature.title}
+              className="group p-6 rounded-2xl border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 bg-white hover:-translate-y-1"
+            >
+              <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
+                <feature.icon size={22} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
