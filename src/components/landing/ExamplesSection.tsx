@@ -36,21 +36,21 @@ const examples = [
 
 export default function ExamplesSection() {
   return (
-    <section id="examples" className="py-24 bg-white">
+    <section id="examples" className="py-24 bg-white dark:bg-slate-950 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <span className="inline-block text-blue-600 font-semibold text-sm uppercase tracking-wider mb-3">Contoh Website</span>
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Lihat hasilnya sendiri
           </h2>
-          <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Berikut contoh website yang dihasilkan oleh SiteAlra untuk berbagai kategori UMKM.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {examples.map((ex) => (
-            <div key={ex.name} className="group rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div key={ex.name} className="group rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-slate-900">
               <div className="relative h-48 overflow-hidden">
                 <img
                   src={ex.image}
@@ -65,16 +65,16 @@ export default function ExamplesSection() {
                   <h3 className="text-white font-bold text-xl">{ex.name}</h3>
                 </div>
               </div>
-              <div className={`${ex.bgLight} p-5`}>
-                <p className="text-gray-600 text-sm mb-4 italic">"{ex.tagline}"</p>
+              <div className={`${ex.bgLight} dark:bg-slate-800 p-5`}>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 italic">"{ex.tagline}"</p>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
-                      <div key={i} className="w-2 h-2 rounded-full bg-gray-300" />
+                      <div key={i} className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600" />
                     ))}
-                    <div className="w-2 h-2 rounded-full bg-gray-300 ml-1" />
+                    <div className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 ml-1" />
                   </div>
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                     <ExternalLink size={11} />
                     Contoh Preview
                   </span>
