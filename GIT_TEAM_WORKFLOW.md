@@ -16,14 +16,15 @@ git pull origin main
 git checkout -b fitur-nama-kamu
 ```
 
-Contoh branch: `fitur-agnan`, `fitur-budi`, `fitur-citra`.
+Contoh branch: `fitur-dashboard`, `backend-crud`, `update-api`.
 
 ## Cara Upload Perubahan
 ```bash
 git status
-git add .
+git add ./ git add *
+git checkout -b branchbaru (bikin branch baru)
 git commit -m "feat: deskripsi perubahan"
-git push -u origin fitur-nama-kamu
+git push -u origin branchbaru
 ```
 
 Lalu buka GitHub dan buat PR:
@@ -34,7 +35,7 @@ Lalu buka GitHub dan buat PR:
 ```bash
 git checkout main
 git pull origin main
-git checkout fitur-nama-kamu
+git checkout namabranch
 git merge main
 ```
 
