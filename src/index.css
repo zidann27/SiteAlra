@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	html {
+		@apply scroll-smooth;
+	}
+
+	body {
+		@apply bg-white text-slate-900 transition-colors duration-300;
+	}
+
+	html.dark body {
+		@apply bg-slate-950 text-slate-100;
+	}
+}
+
+@keyframes hero-loop-left {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-50%);
+	}
+}
+
+.animate-hero-loop-left {
+	animation: hero-loop-left 20s linear infinite;
+	will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.animate-hero-loop-left {
+		animation: none;
+	}
+}
