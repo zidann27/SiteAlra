@@ -26,9 +26,9 @@ export default function PreviewPage() {
 
   if (!state?.formData || !state?.aiContent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
-          <p className="text-gray-500 mb-4">Data tidak ditemukan. Silakan buat website terlebih dahulu.</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">Data tidak ditemukan. Silakan buat website terlebih dahulu.</p>
           <Link to="/generate" className="text-blue-600 hover:underline font-medium">
             Kembali ke Generator
           </Link>
@@ -67,28 +67,30 @@ export default function PreviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 flex flex-col transition-colors duration-300">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-4">
             <div className="flex items-center gap-3">
-              <Link to="/generate" className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500">
+              <Link to="/generate" className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400">
                 <ArrowLeft size={18} />
               </Link>
               <div>
                 <div className="flex items-center gap-2">
                   <Eye size={16} className="text-blue-500" />
-                  <span className="font-semibold text-gray-900 text-sm">Preview Website</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Preview Website</span>
                 </div>
-                <p className="text-xs text-gray-400">{formData.businessName}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{formData.businessName}</p>
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <div className="hidden sm:flex items-center gap-1 bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('desktop')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  viewMode === 'desktop' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                  viewMode === 'desktop'
+                    ? 'bg-white dark:bg-slate-700 shadow-sm text-gray-900 dark:text-gray-100'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <Monitor size={14} /> Desktop
@@ -96,7 +98,9 @@ export default function PreviewPage() {
               <button
                 onClick={() => setViewMode('mobile')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  viewMode === 'mobile' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                  viewMode === 'mobile'
+                    ? 'bg-white dark:bg-slate-700 shadow-sm text-gray-900 dark:text-gray-100'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <Smartphone size={14} /> Mobile
@@ -106,7 +110,7 @@ export default function PreviewPage() {
             <div className="flex items-center gap-2">
               <Link
                 to="/generate"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-medium transition-colors"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-xs font-medium transition-colors"
               >
                 <RefreshCw size={14} /> Buat Ulang
               </Link>
@@ -167,8 +171,8 @@ export default function PreviewPage() {
 
       <div className="flex-1 overflow-auto py-8 px-4">
         <div
-          className={`mx-auto transition-all duration-300 bg-white shadow-2xl rounded-lg overflow-hidden ${
-            viewMode === 'mobile' ? 'max-w-sm ring-4 ring-gray-900 ring-offset-8 rounded-3xl' : 'max-w-6xl'
+          className={`mx-auto transition-all duration-300 bg-white dark:bg-slate-900 shadow-2xl rounded-lg overflow-hidden ${
+            viewMode === 'mobile' ? 'max-w-sm ring-4 ring-gray-900 dark:ring-slate-200 ring-offset-8 dark:ring-offset-slate-950 rounded-3xl' : 'max-w-6xl'
           }`}
         >
           <SiteTemplate

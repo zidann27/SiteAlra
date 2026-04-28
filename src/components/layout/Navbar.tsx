@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { Zap, Menu, X } from "lucide-react";
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isLanding = location.pathname === "/";
@@ -73,12 +72,21 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <button
-            className={`md:hidden p-2 rounded-lg ${textColor}`}
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg transition-colors ${themeButtonBg}`}
+              aria-label={theme === 'light' ? 'Ganti ke mode malam' : 'Ganti ke mode siang'}
+            >
+              {theme === 'light' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              className={`p-2 rounded-lg ${textColor}`}
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </div>
 

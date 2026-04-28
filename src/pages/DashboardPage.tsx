@@ -39,37 +39,37 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       <Navbar />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-8 transition-colors">
           <ArrowLeft size={16} />
           Kembali ke Beranda
         </Link>
 
         <div className="mb-10">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-xs font-semibold mb-3">
+          <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 rounded-full px-3 py-1 text-xs font-semibold mb-3">
             <Sparkles size={12} />
             AI Website Generator
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
             Buat Website Bisnis Anda
           </h1>
-          <p className="text-gray-500 text-lg">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
             Isi informasi bisnis Anda dan biarkan AI kami bekerja.
           </p>
         </div>
 
         {isGenerating ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-8">
             <GenerationProgress />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="p-8 space-y-8">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   Nama Usaha <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -77,14 +77,14 @@ export default function DashboardPage() {
                   value={form.businessName}
                   onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                   placeholder="Contoh: Warung Bu Sari, Salon Cantik Indah..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
                   maxLength={100}
                 />
-                <p className="text-xs text-gray-400 mt-1">{form.businessName.length}/100 karakter</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{form.businessName.length}/100 karakter</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   Deskripsi Usaha <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -92,14 +92,14 @@ export default function DashboardPage() {
                   onChange={(e) => setForm({ ...form, businessDescription: e.target.value })}
                   placeholder="Ceritakan tentang bisnis Anda: apa yang Anda jual, keunggulan produk/layanan, target pelanggan, dll..."
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400 text-sm resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm resize-none"
                   maxLength={500}
                 />
-                <p className="text-xs text-gray-400 mt-1">{form.businessDescription.length}/500 karakter</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{form.businessDescription.length}/500 karakter</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
                   Kategori Bisnis <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -122,8 +122,8 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs text-gray-400 flex items-center gap-2">
+            <div className="px-8 py-5 bg-gray-50 dark:bg-slate-900/70 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-2">
                 <Info size={12} />
                 Konten dibuat otomatis oleh AI · Mock data digunakan jika API tidak tersedia
               </p>
