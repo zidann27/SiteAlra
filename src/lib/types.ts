@@ -30,13 +30,26 @@ export interface AIContent {
 
 export interface GeneratedSite {
   id: string;
-  business_name: string;
-  business_description: string;
+  businessName: string;
+  businessDescription: string;
   category: string;
   slug: string;
-  ai_content: AIContent;
-  view_count: number;
-  created_at: string;
+  aiContent: AIContent;
+  viewCount: number;
+  createdAt: string;
+}
+
+export interface SiteProduct {
+  id: string;
+  siteId: string;
+  name: string;
+  description: string | null;
+  price: string; // decimal serialized from backend
+  imageUrl: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GenerateFormData {
@@ -45,15 +58,15 @@ export interface GenerateFormData {
   category: string;
 }
 
-export type GenerationStep = 'idle' | 'generating' | 'preview' | 'deployed';
+export type GenerationStep = "idle" | "generating" | "preview" | "deployed";
 
 export const CATEGORIES = [
-  { value: 'kuliner', label: 'Kuliner & Makanan', icon: '🍜' },
-  { value: 'jasa', label: 'Jasa & Layanan', icon: '🔧' },
-  { value: 'fashion', label: 'Fashion & Pakaian', icon: '👗' },
-  { value: 'kecantikan', label: 'Kecantikan & Perawatan', icon: '💄' },
-  { value: 'elektronik', label: 'Elektronik & Gadget', icon: '📱' },
-  { value: 'pendidikan', label: 'Pendidikan & Kursus', icon: '📚' },
-  { value: 'kesehatan', label: 'Kesehatan & Kebugaran', icon: '🏥' },
-  { value: 'umum', label: 'Bisnis Umum', icon: '🏢' },
+  { value: "kuliner", label: "Kuliner & Makanan", icon: "🍜" },
+  { value: "jasa", label: "Jasa & Layanan", icon: "🔧" },
+  { value: "fashion", label: "Fashion & Pakaian", icon: "👗" },
+  { value: "kecantikan", label: "Kecantikan & Perawatan", icon: "💄" },
+  { value: "elektronik", label: "Elektronik & Gadget", icon: "📱" },
+  { value: "pendidikan", label: "Pendidikan & Kursus", icon: "📚" },
+  { value: "kesehatan", label: "Kesehatan & Kebugaran", icon: "🏥" },
+  { value: "umum", label: "Bisnis Umum", icon: "🏢" },
 ];

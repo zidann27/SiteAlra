@@ -1,15 +1,26 @@
-import { supabase } from './supabase';
-import { AIContent, GenerateFormData, GeneratedSite } from './types';
+import { AIContent, GenerateFormData, GeneratedSite } from "./types";
 
-const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-website`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
 
-export async function generateWebsiteContent(formData: GenerateFormData): Promise<AIContent> {
-  const response = await fetch(EDGE_FUNCTION_URL, {
-    method: 'POST',
+function apiUrl(path: string): string {
+  if (!API_BASE_URL) return path;
+  return `${API_BASE_URL.replace(/\/$/, "")}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+async function parseJson<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  if (!text) return {} as T;
+  return JSON.parse(text) as T;
+}
+
+export async function generateWebsiteContent(
+  formData: GenerateFormData,
+): Promise<AIContent> {
+  const response = await fetch(apiUrl("/api/generate-website"), {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${ANON_KEY}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       businessName: formData.businessName,
@@ -22,9 +33,13 @@ export async function generateWebsiteContent(formData: GenerateFormData): Promis
     throw new Error(`Generation failed: ${response.statusText}`);
   }
 
-  const result = await response.json();
+  const result = await parseJson<{
+    success: boolean;
+    data?: AIContent;
+    error?: string;
+  }>(response);
   if (!result.success) {
-    throw new Error(result.error || 'Generation failed');
+    throw new Error(result.error || "Generation failed");
   }
 
   return result.data as AIContent;
@@ -33,62 +48,81 @@ export async function generateWebsiteContent(formData: GenerateFormData): Promis
 export function generateSlug(businessName: string): string {
   return businessName
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
     .slice(0, 50);
 }
 
 export async function deploySite(
   formData: GenerateFormData,
-  aiContent: AIContent
+  aiContent: AIContent,
 ): Promise<GeneratedSite> {
-  const baseSlug = generateSlug(formData.businessName);
-  const uniqueSlug = `${baseSlug}-${Date.now().toString(36)}`;
-
-  const { data, error } = await supabase
-    .from('generated_sites')
-    .insert({
-      business_name: formData.businessName,
-      business_description: formData.businessDescription,
+  const response = await fetch(apiUrl("/api/sites"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      businessName: formData.businessName,
+      businessDescription: formData.businessDescription,
       category: formData.category,
-      slug: uniqueSlug,
-      ai_content: aiContent,
-    })
-    .select()
-    .single();
+      aiContent,
+    }),
+  });
 
-  if (error) throw new Error(error.message);
-  return data as GeneratedSite;
-}
-
-export async function getSiteBySlug(slug: string): Promise<GeneratedSite | null> {
-  const { data, error } = await supabase
-    .from('generated_sites')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-
-  if (data) {
-    await supabase
-      .from('generated_sites')
-      .update({ view_count: (data.view_count || 0) + 1 })
-      .eq('id', data.id);
+  if (!response.ok) {
+    throw new Error(`Deploy failed: ${response.statusText}`);
   }
 
-  return data as GeneratedSite | null;
+  const result = await parseJson<{
+    success: boolean;
+    data?: GeneratedSite;
+    error?: string;
+  }>(response);
+  if (!result.success || !result.data)
+    throw new Error(result.error || "Deploy failed");
+  return result.data;
+}
+
+export async function getSiteBySlug(
+  slug: string,
+): Promise<GeneratedSite | null> {
+  const response = await fetch(
+    apiUrl(`/api/sites/${encodeURIComponent(slug)}`),
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Load failed: ${response.statusText}`);
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: GeneratedSite;
+    error?: string;
+  }>(response);
+  if (!result.success) throw new Error(result.error || "Load failed");
+  return (result.data ?? null) as GeneratedSite | null;
 }
 
 export async function getRecentSites(limit = 6): Promise<GeneratedSite[]> {
-  const { data, error } = await supabase
-    .from('generated_sites')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  const response = await fetch(
+    apiUrl(`/api/sites?limit=${encodeURIComponent(String(limit))}`),
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 
-  if (error) throw new Error(error.message);
-  return (data || []) as GeneratedSite[];
+  if (!response.ok) throw new Error(`Load failed: ${response.statusText}`);
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: GeneratedSite[];
+    error?: string;
+  }>(response);
+  if (!result.success) throw new Error(result.error || "Load failed");
+  return (result.data || []) as GeneratedSite[];
 }
