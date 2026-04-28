@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Site {
+  id                  String   @id @default(cuid())
+  businessName        String
+  businessDescription String
+  category            String   @default("umum")
+  slug                String   @unique
+  aiContent           Json
+  viewCount           Int      @default(0)
+  ownerId             String?  // for future auth
+  createdAt           DateTime @default(now())
+
+  products            Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(12, 2)
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([siteId])
+  @@index([isActive])
+}
