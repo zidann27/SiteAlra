@@ -1,31 +1,15 @@
-import React, { useMemo, useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  ArrowLeft,
-  Sparkles,
-} from "lucide-react";
-import { signIn } from "../lib/auth";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const redirectTo = useMemo(() => {
-    const state = location.state as { from?: string } | null;
-    return state?.from || "/dashboard";
-  }, [location.state]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,51 +28,49 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     setTimeout(() => {
-      signIn(email.trim());
-      navigate(redirectTo, { replace: true });
       setIsSubmitting(false);
+      navigate("/login");
     }, 800);
   };
 
   const features = [
     "Template website profesional",
     "Kelola produk & galeri dengan mudah",
-    "Pembuatan konten bertenaga AI"
+    "Pembuatan konten bertenaga AI",
   ];
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row font-sans selection:bg-blue-100 bg-white overflow-hidden">
-      
       {/* =========================================
           LEFT PANEL: THE BRAND VISTA (TONE BIRU)
       ========================================= */}
       <div className="w-full md:w-1/2 bg-[#020617] flex items-center justify-center p-8 sm:p-16 min-h-[40vh] md:min-h-screen relative overflow-hidden">
-        
-        {/* Background Image UMKM */}
-        <div 
+        <div
           className="absolute inset-0 z-0 opacity-40 bg-cover bg-center transition-transform duration-1000 hover:scale-110"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556740734-7f95834d1fb2?auto=format&fit=crop&q=80')" }}
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1556740734-7f95834d1fb2?auto=format&fit=crop&q=80')",
+          }}
         ></div>
-        
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 z-1 bg-gradient-to-br from-[#020617] via-[#020617]/90 to-blue-900/40"></div>
 
-        {/* Dekorasi Cahaya (Glow) */}
+        <div className="absolute inset-0 z-1 bg-gradient-to-br from-[#020617] via-[#020617]/90 to-blue-900/40"></div>
         <div className="absolute top-1/4 -left-20 w-64 h-64 bg-blue-600/20 rounded-full blur-[100px] z-2"></div>
 
         <div className="relative z-10 w-full max-w-md flex flex-col justify-center">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-10 tracking-tight leading-[1.15]">
-            Bangun Website<br />
-            Bisnis Anda
+            Mulai Bangun<br />
+            Website Bisnis
           </h1>
 
           <ul className="space-y-6">
             {features.map((feature, idx) => (
               <li key={idx} className="flex items-center gap-4 text-zinc-300">
                 <div className="bg-blue-500/20 p-1 rounded-full">
-                    <ArrowRight size={18} className="text-blue-400 flex-shrink-0" />
+                  <ArrowRight size={18} className="text-blue-400 flex-shrink-0" />
                 </div>
-                <span className="font-medium tracking-wide text-sm">{feature}</span>
+                <span className="font-medium tracking-wide text-sm">
+                  {feature}
+                </span>
               </li>
             ))}
           </ul>
@@ -96,45 +78,36 @@ export default function LoginPage() {
       </div>
 
       {/* =========================================
-          RIGHT PANEL: THE LOGIN AREA (PUTIH + BLUR)
+          RIGHT PANEL: THE REGISTER AREA (PUTIH + BLUR)
       ========================================= */}
       <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 sm:p-16 min-h-[60vh] md:min-h-screen relative">
-        
-        {/* Efek Blur halus di latar belakang */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
 
-        <Link
-          to="/"
-          className="absolute top-8 left-8 sm:left-16 inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Kembali ke Beranda
-        </Link>
-
         <div className="w-full max-w-sm flex flex-col relative h-full justify-center z-10">
-
-          {/* Logo (Hanya Tulisan) */}
           <div className="mb-6">
-            <span className="text-2xl font-bold tracking-tighter text-zinc-950">SiteAlra.</span>
+            <span className="text-2xl font-bold tracking-tighter text-zinc-950">
+              SiteAlra.
+            </span>
           </div>
 
-          {/* Header Content */}
           <div className="mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">Welcome Back!</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">
+              Daftar Owner
+            </h2>
             <p className="text-zinc-500 font-medium text-sm">
-              Masuk untuk mengelola website dan produk.
+              Buat akun untuk mulai mengelola website dan produk.
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={onSubmit} className="space-y-5">
-            
-            {/* Email Input */}
             <div>
               <div className="relative group flex items-center">
                 <div className="absolute left-4 flex items-center justify-center">
-                  <Mail size={18} className="text-zinc-400 group-focus-within:text-blue-600 transition-colors" />
+                  <Mail
+                    size={18}
+                    className="text-zinc-400 group-focus-within:text-blue-600 transition-colors"
+                  />
                 </div>
                 <input
                   type="email"
@@ -149,11 +122,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password Input */}
             <div>
               <div className="relative group flex items-center">
                 <div className="absolute left-4 flex items-center justify-center">
-                  <Lock size={18} className="text-zinc-400 group-focus-within:text-blue-600 transition-colors" />
+                  <Lock
+                    size={18}
+                    className="text-zinc-400 group-focus-within:text-blue-600 transition-colors"
+                  />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -176,7 +151,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="px-4 py-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium">
                 {error}
@@ -184,7 +158,6 @@ export default function LoginPage() {
             )}
 
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
@@ -193,7 +166,7 @@ export default function LoginPage() {
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-zinc-500 border-t-white rounded-full animate-spin" />
               ) : (
-                "Masuk"
+                "Daftar Sekarang"
               )}
             </button>
           </form>
@@ -202,6 +175,7 @@ export default function LoginPage() {
             <p className="mt-4 text-xs uppercase tracking-[0.3em] text-zinc-400 text-center">
               atau
             </p>
+
             <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
@@ -255,19 +229,18 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-zinc-500">
-              Belum punya akun?{" "}
+              Sudah punya akun?{" "}
               <Link
-                to="/register"
+                to="/login"
                 className="font-semibold text-blue-700 hover:text-blue-800"
               >
-                Klik disini untuk daftar
+                Klik disini untuk login
               </Link>
             </p>
           </div>
 
         </div>
       </div>
-
     </div>
   );
 }

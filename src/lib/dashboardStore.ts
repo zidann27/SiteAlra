@@ -78,8 +78,18 @@ export function loadProducts(): DashboardProduct[] {
   }
 }
 
-export function saveProducts(products: DashboardProduct[]): void {
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+export function saveProducts(
+  products: DashboardProduct[],
+): { ok: true } | { ok: false; error: "quota" | "unknown" } {
+  try {
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "QuotaExceededError") {
+      return { ok: false, error: "quota" };
+    }
+    return { ok: false, error: "unknown" };
+  }
 }
 
 export function loadAiContent(): AIContent | null {
