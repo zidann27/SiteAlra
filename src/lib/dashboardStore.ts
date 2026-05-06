@@ -26,11 +26,21 @@ export type DashboardProduct = {
   imageDataUrl: string | null;
 };
 
+export type ChatMessageRole = "user" | "assistant";
+
+export type ChatMessage = {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: number;
+};
+
 const PROFILE_KEY = "sitealra_profile_v1";
 const PRODUCTS_KEY = "sitealra_products_v1";
 const AI_CONTENT_KEY = "sitealra_ai_content_v1";
 const WEBSITE_ACTIVE_KEY = "sitealra_website_active_v1";
 const VISITOR_TOTAL_KEY = "sitealra_visitor_total_v1";
+const CHAT_MESSAGES_KEY = "sitealra_chat_messages_v1";
 
 export function getDefaultProfile(): UmkmProfile {
   return {
@@ -119,6 +129,21 @@ export function getVisitorTotal(): number {
   } catch {
     return 0;
   }
+}
+
+export function loadChatMessages(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(CHAT_MESSAGES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveChatMessages(messages: ChatMessage[]): void {
+  localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
 }
 
 export function incrementVisitorTotal(): number {

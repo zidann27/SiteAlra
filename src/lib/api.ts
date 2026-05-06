@@ -126,3 +126,42 @@ export async function getRecentSites(limit = 6): Promise<GeneratedSite[]> {
   if (!result.success) throw new Error(result.error || "Load failed");
   return (result.data || []) as GeneratedSite[];
 }
+
+export async function chatWithAssistant(input: {
+  message: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
+  context?: {
+    businessName?: string;
+    businessType?: string;
+    targetCustomers?: string;
+  };
+}): Promise<{ reply: string }> {
+  const response = await fetch(apiUrl("/api/chat"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    try {
+      const parsed = JSON.parse(text) as { error?: string };
+      if (parsed?.error) throw new Error(parsed.error);
+    } catch {
+      // ignore JSON parse errors
+    }
+    throw new Error(text || `Chat failed: ${response.statusText}`);
+  }
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: { reply: string };
+    error?: string;
+  }>(response);
+
+  if (!result.success || !result.data?.reply) {
+    throw new Error(result.error || "Chat failed");
+  }
+
+  return { reply: result.data.reply };
+}
