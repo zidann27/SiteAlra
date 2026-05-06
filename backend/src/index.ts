@@ -9,6 +9,7 @@ import { OAuth2Client } from "google-auth-library";
 import { prisma } from "./db.js";
 import { generateSlug } from "./slug.js";
 import { generateWithOpenAI, type GenerateRequest } from "./ai.js";
+import { chatWithGeminiFlash, type ChatRequest } from "./gemini.js";
 
 const app = express();
 
@@ -460,6 +461,70 @@ app.post("/api/generate-website", async (req, res) => {
   });
 
   return res.json({ success: true, data });
+});
+
+app.post("/api/chat", async (req, res) => {
+  const body = req.body as Partial<ChatRequest>;
+  if (
+    !body.message ||
+    typeof body.message !== "string" ||
+    !body.message.trim()
+  ) {
+    return res.status(400).json({ success: false, error: "Missing message" });
+  }
+
+  try {
+    const reply = await chatWithGeminiFlash({
+      message: body.message,
+      history: Array.isArray(body.history) ? body.history : [],
+      context: body.context,
+    });
+
+    return res.json({ success: true, data: { reply } });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Chat failed";
+    const lower = msg.toLowerCase();
+
+    // IMPORTANT: Never return raw upstream/provider error text to clients.
+    // It can be noisy and may leak implementation details.
+    if (
+      msg.includes("RESOURCE_EXHAUSTED") ||
+      msg.includes("429") ||
+      lower.includes("rate limit")
+    ) {
+      return res.status(429).json({
+        success: false,
+        error:
+          "Kuota Gemini (free tier) kamu 0/habis. Cek https://ai.dev/rate-limit atau buat API key baru dari Google AI Studio yang punya kuota free-tier.",
+      });
+    }
+
+    if (
+      msg.includes("UNAVAILABLE") ||
+      msg.includes("503") ||
+      lower.includes("high demand") ||
+      lower.includes("sedang ramai")
+    ) {
+      return res.status(503).json({
+        success: false,
+        error:
+          "Gemini sedang ramai/overload (503). Coba lagi dalam 10–30 detik.",
+      });
+    }
+
+    if (msg.includes("GEMINI_API_KEY is not set")) {
+      return res.status(500).json({
+        success: false,
+        error:
+          "Server belum dikonfigurasi: GEMINI_API_KEY belum diset di backend/.env.",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Chat gagal. Coba lagi sebentar.",
+    });
+  }
 });
 
 app.post("/api/sites", async (req, res) => {

@@ -19,6 +19,8 @@ PORT=4000
 CORS_ORIGIN=http://localhost:5173
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 3. Prisma
@@ -37,6 +39,7 @@ npm run dev
 ## Endpoints
 
 - `POST /api/generate-website`
+- `POST /api/chat`
 - `POST /api/sites`
 - `GET /api/sites?limit=6`
 - `GET /api/sites/:slug`
