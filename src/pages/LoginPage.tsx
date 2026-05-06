@@ -9,7 +9,7 @@ import {
   ArrowLeft,
   Sparkles,
 } from "lucide-react";
-import { signIn } from "../lib/auth";
+import { getGoogleAuthUrl, signInWithPassword } from "../lib/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ export default function LoginPage() {
     return state?.from || "/dashboard";
   }, [location.state]);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!email.trim()) {
@@ -43,11 +43,14 @@ export default function LoginPage() {
     setError("");
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      signIn(email.trim());
+    try {
+      await signInWithPassword(email.trim(), password);
       navigate(redirectTo, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login gagal.");
+    } finally {
       setIsSubmitting(false);
-    }, 800);
+    }
   };
 
   const features = [
@@ -224,6 +227,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 aria-label="Lanjutkan dengan Google"
+                onClick={() => {
+                  window.location.href = getGoogleAuthUrl();
+                }}
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
                 <svg

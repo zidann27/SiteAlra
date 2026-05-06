@@ -7,6 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  provider     String?  @default("local")
+  providerId   String?
+  createdAt    DateTime @default(now())
+
+  sites        Site[]
+
+  @@index([provider])
+  @@unique([provider, providerId])
+}
+
 model Site {
   id                  String   @id @default(cuid())
   businessName        String
@@ -15,7 +30,8 @@ model Site {
   slug                String   @unique
   aiContent           Json
   viewCount           Int      @default(0)
-  ownerId             String?  // for future auth
+  ownerId             String?
+  owner               User?    @relation(fields: [ownerId], references: [id])
   createdAt           DateTime @default(now())
 
   products            Product[]

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { getGoogleAuthUrl, registerWithPassword } from "../lib/auth";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!email.trim()) {
@@ -27,10 +28,14 @@ export default function RegisterPage() {
     setError("");
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      await registerWithPassword(email.trim(), password);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registrasi gagal.");
+    } finally {
       setIsSubmitting(false);
-      navigate("/login");
-    }, 800);
+    }
   };
 
   const features = [
@@ -198,6 +203,9 @@ export default function RegisterPage() {
               <button
                 type="button"
                 aria-label="Lanjutkan dengan Google"
+                onClick={() => {
+                  window.location.href = getGoogleAuthUrl();
+                }}
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
                 <svg

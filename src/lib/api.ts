@@ -22,6 +22,7 @@ export async function generateWebsiteContent(
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify({
       businessName: formData.businessName,
       businessDescription: formData.businessDescription,
@@ -62,6 +63,7 @@ export async function deploySite(
   const response = await fetch(apiUrl("/api/sites"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({
       businessName: formData.businessName,
       businessDescription: formData.businessDescription,
@@ -92,6 +94,7 @@ export async function getSiteBySlug(
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     },
   );
 
@@ -113,6 +116,7 @@ export async function getRecentSites(limit = 6): Promise<GeneratedSite[]> {
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     },
   );
 
