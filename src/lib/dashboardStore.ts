@@ -26,8 +26,19 @@ export type DashboardProduct = {
   imageDataUrl: string | null;
 };
 
+export type ChatMessageRole = "user" | "assistant";
+
+export type ChatMessage = {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: number;
+};
+
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
+
+const CHAT_MESSAGES_KEY = "sitealra_chat_messages_v1";
 
 function apiUrl(path: string): string {
   if (!API_BASE_URL) return path;
@@ -189,4 +200,19 @@ export async function fileToDataUrl(file: File): Promise<string> {
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(file);
   });
+}
+
+export function loadChatMessages(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(CHAT_MESSAGES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveChatMessages(messages: ChatMessage[]): void {
+  localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
 }

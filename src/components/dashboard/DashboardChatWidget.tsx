@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Send, X } from "lucide-react";
 import {
+  getDefaultProfile,
   loadChatMessages,
   loadProfile,
   newId,
@@ -21,7 +22,7 @@ function formatTime(ts: number): string {
 }
 
 export default function DashboardChatWidget() {
-  const profile = useMemo(() => loadProfile(), []);
+  const [profile, setProfile] = useState(getDefaultProfile());
 
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
@@ -31,6 +32,20 @@ export default function DashboardChatWidget() {
   const [sending, setSending] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const data = await loadProfile();
+      if (!alive) return;
+      setProfile(data);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (messages.length === 0) return;
