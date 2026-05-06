@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Info, Loader2 } from "lucide-react";
 import { generateWebsiteContent } from "../../lib/api";
 import type { AIContent } from "../../lib/types";
 import {
+  getDefaultProfile,
   loadProfile,
   saveAiContent,
   saveProfile,
@@ -39,23 +40,42 @@ function applyStyleToContent(style: UmkmStyle, content: AIContent): AIContent {
 
 export default function AIGeneratorPage() {
   const navigate = useNavigate();
-  const initial = useMemo(() => loadProfile(), []);
+  const [initial, setInitial] = useState(getDefaultProfile());
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const [umkmName, setUmkmName] = useState(initial.name);
+  const [umkmName, setUmkmName] = useState("");
   const [businessType, setBusinessType] = useState(initial.businessType);
-  const [shortDescription, setShortDescription] = useState(
-    initial.shortDescription,
-  );
-  const [targetCustomers, setTargetCustomers] = useState(
-    initial.targetCustomers,
-  );
+  const [shortDescription, setShortDescription] = useState("");
+  const [targetCustomers, setTargetCustomers] = useState("");
   const [style, setStyle] = useState<UmkmStyle>(initial.style);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const profile = await loadProfile();
+      if (!alive) return;
+      setInitial(profile);
+      setUmkmName(profile.name);
+      setBusinessType(profile.businessType);
+      setShortDescription(profile.shortDescription);
+      setTargetCustomers(profile.targetCustomers);
+      setStyle(profile.style);
+      setLoadingProfile(false);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const onGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (loadingProfile) return;
 
     if (!umkmName.trim()) {
       setError("Nama UMKM wajib diisi.");
@@ -86,7 +106,7 @@ export default function AIGeneratorPage() {
       };
 
       // save profile first
-      saveProfile(nextProfile);
+      await saveProfile(nextProfile);
 
       const ai = await generateWebsiteContent({
         businessName: umkmName,
@@ -112,8 +132,8 @@ export default function AIGeneratorPage() {
           primary: nextProfile.themeColor || styled.colorScheme.primary,
         },
       };
-      saveAiContent(merged);
-      setWebsiteActive(true);
+      await saveAiContent(merged);
+      await setWebsiteActive(true);
       navigate("/dashboard/preview", { replace: true });
     } catch {
       setError(

@@ -32,7 +32,7 @@ export default function SiteViewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
           <Loader2
             size={40}
@@ -46,9 +46,9 @@ export default function SiteViewPage() {
 
   if (error || !site) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center px-4 transition-colors duration-300">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle size={28} className="text-red-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">

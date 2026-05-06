@@ -35,6 +35,7 @@ export default function ProductsCrudPage() {
   const [products, setProducts] = useState<DashboardProduct[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState("");
+  const maxImageBytes = 5 * 1024 * 1024;
 
   const [draft, setDraft] = useState<Draft>({
     id: "",
@@ -47,12 +48,34 @@ export default function ProductsCrudPage() {
   const isEditing = useMemo(() => Boolean(draft.id), [draft.id]);
 
   useEffect(() => {
-    setProducts(loadProducts());
+    let alive = true;
+
+    (async () => {
+      const data = await loadProducts();
+      if (!alive) return;
+      setProducts(data);
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  useEffect(() => {
-    saveProducts(products);
-  }, [products]);
+  const commitProducts = async (nextProducts: DashboardProduct[]) => {
+    const result = await saveProducts(nextProducts);
+    if (!result.ok) {
+      setError(
+        result.error === "network"
+          ? "Gagal menyimpan. Periksa koneksi atau backend."
+          : "Gagal menyimpan perubahan. Coba lagi.",
+      );
+      return false;
+    }
+
+    setProducts(nextProducts);
+    setError("");
+    return true;
+  };
 
   const openCreate = () => {
     setDraft({
@@ -83,11 +106,12 @@ export default function ProductsCrudPage() {
     setError("");
   };
 
-  const onDelete = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  const onDelete = async (id: string) => {
+    const nextProducts = products.filter((p) => p.id !== id);
+    await commitProducts(nextProducts);
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!draft.name.trim()) {
@@ -103,19 +127,18 @@ export default function ProductsCrudPage() {
 
     setError("");
 
+    let nextProducts: DashboardProduct[] = [];
     if (draft.id) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === draft.id
-            ? {
-                ...p,
-                name: draft.name.trim(),
-                price: priceNumber,
-                description: draft.description.trim(),
-                imageDataUrl: draft.imageDataUrl,
-              }
-            : p,
-        ),
+      nextProducts = products.map((p) =>
+        p.id === draft.id
+          ? {
+              ...p,
+              name: draft.name.trim(),
+              price: priceNumber,
+              description: draft.description.trim(),
+              imageDataUrl: draft.imageDataUrl,
+            }
+          : p,
       );
     } else {
       const next: DashboardProduct = {
@@ -125,14 +148,25 @@ export default function ProductsCrudPage() {
         description: draft.description.trim(),
         imageDataUrl: draft.imageDataUrl,
       };
-      setProducts((prev) => [next, ...prev]);
+      nextProducts = [next, ...products];
     }
 
-    closeModal();
+    if (await commitProducts(nextProducts)) {
+      closeModal();
+    }
   };
 
-  const onImageChange = async (file: File | null) => {
+  const onImageChange = async (
+    file: File | null,
+    input?: HTMLInputElement,
+  ) => {
     if (!file) return;
+    if (file.size > maxImageBytes) {
+      setError("Ukuran gambar terlalu besar (maks 5MB).");
+      setDraft((d) => ({ ...d, imageDataUrl: null }));
+      if (input) input.value = "";
+      return;
+    }
     const dataUrl = await fileToDataUrl(file);
     setDraft((d) => ({ ...d, imageDataUrl: dataUrl }));
   };
@@ -324,7 +358,7 @@ export default function ProductsCrudPage() {
                       type="file"
                       accept="image/*"
                       onChange={(e) =>
-                        onImageChange(e.target.files?.[0] ?? null)
+                        onImageChange(e.target.files?.[0] ?? null, e.target)
                       }
                       className="text-sm text-gray-600"
                     />

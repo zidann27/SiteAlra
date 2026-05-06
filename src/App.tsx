@@ -6,6 +6,7 @@ import SiteViewPage from "./pages/SiteViewPage";
 import OwnerHomePage from "./pages/OwnerHomePage";
 import OwnerProductsPage from "./pages/OwnerProductsPage";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/dashboard/ProtectedRoute";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import OverviewPage from "./pages/dashboard/OverviewPage";
@@ -21,6 +22,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>

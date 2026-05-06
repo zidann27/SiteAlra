@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 
 export default function HeroSection() {
+  const previewImage = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -24,9 +26,9 @@ export default function HeroSection() {
             <span className="text-blue-300 text-sm font-medium">Didukung kecerdasan buatan (AI)</span>
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white dark:text-blue-50 leading-tight mb-6">
             Website Profesional
-            <span className="block bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-blue-300 via-sky-300 to-cyan-300 dark:from-blue-200 dark:via-sky-200 dark:to-cyan-200 bg-clip-text text-transparent">
               untuk UMKM Anda
             </span>
           </h1>
@@ -74,11 +76,18 @@ export default function HeroSection() {
               </div>
             </div>
             <div className="aspect-[16/7] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center relative overflow-hidden">
-              <img
-                src="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg"
-                alt="Preview website"
-                className="absolute inset-0 w-full h-full object-cover opacity-40"
-              />
+              <div className="absolute inset-0 w-[200%] h-full flex animate-hero-loop-left opacity-40">
+                <img
+                  src={previewImage}
+                  alt="Preview website"
+                  className="w-1/2 h-full object-cover flex-shrink-0"
+                />
+                <img
+                  src={previewImage}
+                  alt="Preview website"
+                  className="w-1/2 h-full object-cover flex-shrink-0"
+                />
+              </div>
               <div className="relative z-10 text-center px-8">
                 <p className="text-3xl font-bold text-amber-900 mb-2">Warung Bu Sari</p>
                 <p className="text-amber-700 font-medium">Cita Rasa Rumahan yang Selalu Dinantikan</p>
