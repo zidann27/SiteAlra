@@ -11,6 +11,7 @@ import {
   ChevronsLeft,
 } from "lucide-react";
 import { getSessionUser, signOut } from "../../lib/auth";
+import DashboardChatWidget from "./DashboardChatWidget";
 
 const navItems = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
@@ -180,6 +181,8 @@ export default function DashboardLayout() {
           <main className="px-4 sm:px-6 py-8 md:py-0">
             <Outlet />
           </main>
+
+          <DashboardChatWidget />
         </div>
       </div>
     </div>
