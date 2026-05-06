@@ -1,17 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, Pencil, Palette, Info } from "lucide-react";
 import SiteTemplate from "../../components/preview/SiteTemplate";
 import {
+  getDefaultProfile,
   loadAiContent,
   loadProducts,
   loadProfile,
   saveAiContent,
   saveProfile,
+  type DashboardProduct,
 } from "../../lib/dashboardStore";
 import type { AIContent } from "../../lib/types";
 
 function mapProductsToAI(
-  products: ReturnType<typeof loadProducts>,
+  products: DashboardProduct[],
 ): AIContent["products"] {
   return products.map((p) => ({
     name: p.name,
@@ -24,43 +26,72 @@ function mapProductsToAI(
 }
 
 export default function WebsitePreviewPage() {
-  const profile = useMemo(() => loadProfile(), []);
-  const [content, setContent] = useState<AIContent | null>(() => {
-    const ai = loadAiContent();
-    if (!ai) return null;
-
-    const products = loadProducts();
-    return {
-      ...ai,
-      title: profile.name || ai.title,
-      contact: {
-        phone: profile.phone || ai.contact.phone,
-        email: profile.publicEmail || profile.ownerEmail || ai.contact.email,
-        address: profile.address || ai.contact.address,
-        hours: profile.hours || ai.contact.hours,
-      },
-      products: products.length ? mapProductsToAI(products) : ai.products,
-      colorScheme: {
-        ...ai.colorScheme,
-        primary: profile.themeColor || ai.colorScheme.primary,
-      },
-    };
-  });
+  const [profile, setProfile] = useState(getDefaultProfile());
+  const [content, setContent] = useState<AIContent | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
 
-  const [draft, setDraft] = useState(() => {
-    const ai = content;
-    return {
-      title: ai?.title || "",
-      tagline: ai?.tagline || "",
-      description: ai?.description || "",
-      about: ai?.about || "",
-      themeColor: profile.themeColor,
-    };
+  const [draft, setDraft] = useState({
+    title: "",
+    tagline: "",
+    description: "",
+    about: "",
+    themeColor: "#2563eb",
   });
 
-  const applyEdits = () => {
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const [profileData, ai, products] = await Promise.all([
+        loadProfile(),
+        loadAiContent(),
+        loadProducts(),
+      ]);
+
+      if (!alive) return;
+      setProfile(profileData);
+
+      if (!ai) {
+        setContent(null);
+        return;
+      }
+
+      const merged: AIContent = {
+        ...ai,
+        title: profileData.name || ai.title,
+        contact: {
+          phone: profileData.phone || ai.contact.phone,
+          email:
+            profileData.publicEmail ||
+            profileData.ownerEmail ||
+            ai.contact.email,
+          address: profileData.address || ai.contact.address,
+          hours: profileData.hours || ai.contact.hours,
+        },
+        products: products.length ? mapProductsToAI(products) : ai.products,
+        colorScheme: {
+          ...ai.colorScheme,
+          primary: profileData.themeColor || ai.colorScheme.primary,
+        },
+      };
+
+      setContent(merged);
+      setDraft({
+        title: merged.title || "",
+        tagline: merged.tagline || "",
+        description: merged.description || "",
+        about: merged.about || "",
+        themeColor: profileData.themeColor,
+      });
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const applyEdits = async () => {
     if (!content) return;
 
     const next: AIContent = {
@@ -73,8 +104,8 @@ export default function WebsitePreviewPage() {
     };
 
     setContent(next);
-    saveAiContent(next);
-    saveProfile({
+    await saveAiContent(next);
+    await saveProfile({
       ...profile,
       name: draft.title,
       themeColor: draft.themeColor,

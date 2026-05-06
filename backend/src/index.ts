@@ -75,6 +75,36 @@ function requireAuth(
   next();
 }
 
+function defaultProfileData() {
+  return {
+    name: "",
+    businessType: "kuliner",
+    shortDescription: "",
+    targetCustomers: "",
+    style: "modern",
+    ownerEmail: "",
+    phone: "",
+    publicEmail: "",
+    address: "",
+    hours: "",
+    domainName: "",
+    logoDataUrl: null as string | null,
+    themeColor: "#2563eb",
+    aiContent: null as unknown | null,
+    websiteActive: false,
+    visitorTotal: 0,
+  };
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
 app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
@@ -272,8 +302,147 @@ app.get("/auth/google/callback", async (req, res) => {
     res.clearCookie(oauthStateCookieName, { path: "/" });
     return res.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("Google OAuth error:", err);
     return res.status(500).send("Google login failed.");
   }
+});
+
+app.get("/api/owner/profile", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  let profile = await prisma.userProfile.findUnique({
+    where: { userId: user.id },
+  });
+
+  if (!profile) {
+    profile = await prisma.userProfile.create({
+      data: { userId: user.id, ...defaultProfileData() },
+    });
+  }
+
+  return res.json({ success: true, data: profile });
+});
+
+app.put("/api/owner/profile", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const body = req.body as Partial<ReturnType<typeof defaultProfileData>> & {
+    aiContent?: unknown;
+  };
+
+  const data = {
+    name: body.name ?? undefined,
+    businessType: body.businessType ?? undefined,
+    shortDescription: body.shortDescription ?? undefined,
+    targetCustomers: body.targetCustomers ?? undefined,
+    style: body.style ?? undefined,
+    ownerEmail: body.ownerEmail ?? undefined,
+    phone: body.phone ?? undefined,
+    publicEmail: body.publicEmail ?? undefined,
+    address: body.address ?? undefined,
+    hours: body.hours ?? undefined,
+    domainName: body.domainName ?? undefined,
+    logoDataUrl: body.logoDataUrl ?? undefined,
+    themeColor: body.themeColor ?? undefined,
+    aiContent: body.aiContent ?? undefined,
+    websiteActive:
+      typeof body.websiteActive === "boolean" ? body.websiteActive : undefined,
+    visitorTotal:
+      typeof body.visitorTotal === "number" ? body.visitorTotal : undefined,
+  };
+
+  const profile = await prisma.userProfile.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, ...defaultProfileData(), ...data },
+    update: data,
+  });
+
+  return res.json({ success: true, data: profile });
+});
+
+app.get("/api/owner/products", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const products = await prisma.userProduct.findMany({
+    where: { userId: user.id },
+    orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
+  });
+
+  const mapped = products.map((product) => ({
+    id: product.id,
+    name: product.name,
+    price: Number(product.price),
+    description: product.description || "",
+    imageDataUrl: product.imageDataUrl || null,
+    sortOrder: product.sortOrder,
+    isActive: product.isActive,
+  }));
+
+  return res.json({ success: true, data: mapped });
+});
+
+app.put("/api/owner/products", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const body = req.body as {
+    products?: Array<{
+      id?: string;
+      name?: string;
+      price?: number;
+      description?: string;
+      imageDataUrl?: string | null;
+      sortOrder?: number;
+      isActive?: boolean;
+    }>;
+  };
+
+  const products = Array.isArray(body.products) ? body.products : [];
+  for (const product of products) {
+    if (!product.name || !product.name.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Nama produk wajib diisi." });
+    }
+    const price = toNumber(product.price, -1);
+    if (price < 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Harga tidak valid." });
+    }
+  }
+
+  const createData = products.map((product) => ({
+    id: product.id,
+    userId: user.id,
+    name: product.name?.trim() || "",
+    description: product.description?.trim() || "",
+    price: toNumber(product.price).toFixed(2),
+    imageDataUrl: product.imageDataUrl || null,
+    sortOrder: toNumber(product.sortOrder),
+    isActive: product.isActive ?? true,
+  }));
+
+  await prisma.$transaction([
+    prisma.userProduct.deleteMany({ where: { userId: user.id } }),
+    ...(createData.length
+      ? [prisma.userProduct.createMany({ data: createData })]
+      : []),
+  ]);
+
+  const updated = await prisma.userProduct.findMany({
+    where: { userId: user.id },
+    orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
+  });
+
+  return res.json({
+    success: true,
+    data: updated.map((product) => ({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      description: product.description || "",
+      imageDataUrl: product.imageDataUrl || null,
+      sortOrder: product.sortOrder,
+      isActive: product.isActive,
+    })),
+  });
 });
 
 app.post("/api/generate-website", async (req, res) => {

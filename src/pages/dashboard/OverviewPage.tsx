@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Package, Users, Globe, Sparkles } from "lucide-react";
 import {
   getVisitorTotal,
@@ -38,14 +38,32 @@ function StatCard({
 
 export default function OverviewPage() {
   const [visitorTotal, setVisitorTotal] = useState(0);
+  const [productsCount, setProductsCount] = useState(0);
+  const [websiteActive, setWebsiteActiveState] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
 
   useEffect(() => {
-    setVisitorTotal(getVisitorTotal());
-  }, []);
+    let alive = true;
 
-  const productsCount = useMemo(() => loadProducts().length, []);
-  const websiteActive = useMemo(() => isWebsiteActive(), []);
-  const aiReady = useMemo(() => Boolean(loadAiContent()), []);
+    (async () => {
+      const [visitor, products, website, ai] = await Promise.all([
+        getVisitorTotal(),
+        loadProducts(),
+        isWebsiteActive(),
+        loadAiContent(),
+      ]);
+
+      if (!alive) return;
+      setVisitorTotal(visitor);
+      setProductsCount(products.length);
+      setWebsiteActiveState(website);
+      setAiReady(Boolean(ai));
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <div>
@@ -68,19 +86,19 @@ export default function OverviewPage() {
         <StatCard
           title="Total Visitor Website"
           value={String(visitorTotal)}
-          subtitle="Dummy counter (FE-only)"
+          subtitle="Total pengunjung tersimpan"
           Icon={Users}
         />
         <StatCard
           title="Status Website"
           value={websiteActive ? "Active" : "Inactive"}
-          subtitle="Berdasarkan data tersimpan"
+          subtitle="Status berdasarkan akun"
           Icon={Globe}
         />
         <StatCard
           title="Status AI"
           value={aiReady ? "Ready" : "Not Generated"}
-          subtitle="Konten AI tersimpan"
+          subtitle="Konten AI pada akun"
           Icon={Sparkles}
         />
       </div>

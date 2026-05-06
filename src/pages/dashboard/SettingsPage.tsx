@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Save, Image as ImageIcon } from "lucide-react";
 import {
   fileToDataUrl,
@@ -8,13 +8,40 @@ import {
 } from "../../lib/dashboardStore";
 
 export default function SettingsPage() {
-  const initial = useMemo(() => loadProfile(), []);
-  const [form, setForm] = useState<UmkmProfile>(initial);
+  const [form, setForm] = useState<UmkmProfile>({
+    name: "",
+    businessType: "kuliner",
+    shortDescription: "",
+    targetCustomers: "",
+    style: "modern",
+    ownerEmail: "",
+    phone: "",
+    publicEmail: "",
+    address: "",
+    hours: "",
+    domainName: "",
+    logoDataUrl: null,
+    themeColor: "#2563eb",
+  });
   const [saved, setSaved] = useState(false);
 
-  const onSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const profile = await loadProfile();
+      if (!alive) return;
+      setForm(profile);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const onSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    saveProfile(form);
+    await saveProfile(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -31,9 +58,9 @@ export default function SettingsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Settings
         </h1>
-        <p className="text-gray-500 mt-2">
-          Pengaturan UMKM (FE-only) tersimpan di localStorage.
-        </p>
+          <p className="text-gray-500 mt-2">
+            Pengaturan UMKM tersimpan di akun kamu.
+          </p>
       </div>
 
       <form

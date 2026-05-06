@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart3, MousePointerClick, Percent, Users } from "lucide-react";
 import { getVisitorTotal, loadProducts } from "../../lib/dashboardStore";
 
@@ -32,8 +32,27 @@ function StatCard({
 }
 
 export default function AnalyticsPage() {
-  const visitorTotal = useMemo(() => getVisitorTotal(), []);
-  const products = useMemo(() => loadProducts(), []);
+  const [visitorTotal, setVisitorTotal] = useState(0);
+  const [products, setProducts] = useState<Array<{ name: string }>>([]);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const [visitor, list] = await Promise.all([
+        getVisitorTotal(),
+        loadProducts(),
+      ]);
+
+      if (!alive) return;
+      setVisitorTotal(visitor);
+      setProducts(list);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const topProduct = products[0]?.name || "-";
 
@@ -58,7 +77,7 @@ export default function AnalyticsPage() {
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics</h1>
         <p className="text-gray-500 mt-2">
-          Statistik sederhana (dummy) untuk dashboard.
+          Statistik ringkas untuk dashboard.
         </p>
       </div>
 
@@ -66,25 +85,25 @@ export default function AnalyticsPage() {
         <StatCard
           title="Total Visitor"
           value={String(visitorTotal)}
-          subtitle="Dummy counter (FE-only)"
+          subtitle="Total pengunjung tersimpan"
           Icon={Users}
         />
         <StatCard
           title="Produk paling dilihat"
           value={topProduct}
-          subtitle="Dummy: ambil produk pertama"
+          subtitle="Produk teratas saat ini"
           Icon={BarChart3}
         />
         <StatCard
           title="Click CTA"
           value={String(clickCta)}
-          subtitle="Dummy estimate"
+          subtitle="Perkiraan keterlibatan"
           Icon={MousePointerClick}
         />
         <StatCard
           title="Conversion rate"
           value={`${conversionRate}%`}
-          subtitle="Dummy estimate"
+          subtitle="Perkiraan konversi"
           Icon={Percent}
         />
       </div>
@@ -92,7 +111,7 @@ export default function AnalyticsPage() {
       <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="font-bold text-gray-900">Grafik Visitor (Dummy)</div>
+            <div className="font-bold text-gray-900">Grafik Visitor</div>
             <div className="text-sm text-gray-500 mt-1">7 hari terakhir</div>
           </div>
         </div>

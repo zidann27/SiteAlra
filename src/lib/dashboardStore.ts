@@ -26,11 +26,19 @@ export type DashboardProduct = {
   imageDataUrl: string | null;
 };
 
-const PROFILE_KEY = "sitealra_profile_v1";
-const PRODUCTS_KEY = "sitealra_products_v1";
-const AI_CONTENT_KEY = "sitealra_ai_content_v1";
-const WEBSITE_ACTIVE_KEY = "sitealra_website_active_v1";
-const VISITOR_TOTAL_KEY = "sitealra_visitor_total_v1";
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
+
+function apiUrl(path: string): string {
+  if (!API_BASE_URL) return path;
+  return `${API_BASE_URL.replace(/\/$/, "")}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+async function parseJson<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  if (!text) return {} as T;
+  return JSON.parse(text) as T;
+}
 
 export function getDefaultProfile(): UmkmProfile {
   return {
@@ -50,91 +58,124 @@ export function getDefaultProfile(): UmkmProfile {
   };
 }
 
-export function loadProfile(): UmkmProfile {
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY);
-    if (!raw) return getDefaultProfile();
-    return {
-      ...getDefaultProfile(),
-      ...(JSON.parse(raw) as Partial<UmkmProfile>),
+async function fetchProfile(): Promise<UmkmProfile & {
+  aiContent?: AIContent | null;
+  websiteActive?: boolean;
+  visitorTotal?: number;
+}> {
+  const response = await fetch(apiUrl("/api/owner/profile"), {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: UmkmProfile & {
+      aiContent?: AIContent | null;
+      websiteActive?: boolean;
+      visitorTotal?: number;
     };
-  } catch {
+    error?: string;
+  }>(response);
+
+  if (!response.ok || !result.success || !result.data) {
     return getDefaultProfile();
   }
+
+  return {
+    ...getDefaultProfile(),
+    ...result.data,
+  };
 }
 
-export function saveProfile(profile: UmkmProfile): void {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+export async function loadProfile(): Promise<UmkmProfile> {
+  const profile = await fetchProfile();
+  return {
+    ...getDefaultProfile(),
+    ...profile,
+  };
 }
 
-export function loadProducts(): DashboardProduct[] {
-  try {
-    const raw = localStorage.getItem(PRODUCTS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as DashboardProduct[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+export async function saveProfile(profile: UmkmProfile): Promise<void> {
+  await fetch(apiUrl("/api/owner/profile"), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(profile),
+  });
+}
+
+export async function loadProducts(): Promise<DashboardProduct[]> {
+  const response = await fetch(apiUrl("/api/owner/products"), {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: DashboardProduct[];
+    error?: string;
+  }>(response);
+
+  if (!response.ok || !result.success) {
     return [];
   }
+
+  return result.data || [];
 }
 
-export function saveProducts(
+export async function saveProducts(
   products: DashboardProduct[],
-): { ok: true } | { ok: false; error: "quota" | "unknown" } {
+): Promise<{ ok: true } | { ok: false; error: "network" | "unknown" }> {
   try {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof DOMException && err.name === "QuotaExceededError") {
-      return { ok: false, error: "quota" };
+    const response = await fetch(apiUrl("/api/owner/products"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ products }),
+    });
+
+    if (!response.ok) {
+      return { ok: false, error: "unknown" };
     }
-    return { ok: false, error: "unknown" };
-  }
-}
 
-export function loadAiContent(): AIContent | null {
-  try {
-    const raw = localStorage.getItem(AI_CONTENT_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as AIContent;
+    return { ok: true };
   } catch {
-    return null;
+    return { ok: false, error: "network" };
   }
 }
 
-export function saveAiContent(content: AIContent): void {
-  localStorage.setItem(AI_CONTENT_KEY, JSON.stringify(content));
+export async function loadAiContent(): Promise<AIContent | null> {
+  const profile = await fetchProfile();
+  return (profile.aiContent as AIContent | null) ?? null;
 }
 
-export function isWebsiteActive(): boolean {
-  try {
-    const raw = localStorage.getItem(WEBSITE_ACTIVE_KEY);
-    if (raw === null) return Boolean(loadAiContent());
-    return raw === "true";
-  } catch {
-    return Boolean(loadAiContent());
-  }
+export async function saveAiContent(content: AIContent): Promise<void> {
+  await fetch(apiUrl("/api/owner/profile"), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ aiContent: content, websiteActive: true }),
+  });
 }
 
-export function setWebsiteActive(active: boolean): void {
-  localStorage.setItem(WEBSITE_ACTIVE_KEY, String(active));
+export async function isWebsiteActive(): Promise<boolean> {
+  const profile = await fetchProfile();
+  return Boolean(profile.websiteActive ?? profile.aiContent);
 }
 
-export function getVisitorTotal(): number {
-  try {
-    const raw = localStorage.getItem(VISITOR_TOTAL_KEY);
-    if (!raw) return 0;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : 0;
-  } catch {
-    return 0;
-  }
+export async function setWebsiteActive(active: boolean): Promise<void> {
+  await fetch(apiUrl("/api/owner/profile"), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ websiteActive: active }),
+  });
 }
 
-export function incrementVisitorTotal(): number {
-  const next = getVisitorTotal() + 1;
-  localStorage.setItem(VISITOR_TOTAL_KEY, String(next));
-  return next;
+export async function getVisitorTotal(): Promise<number> {
+  const profile = await fetchProfile();
+  return Number(profile.visitorTotal || 0);
 }
 
 export function newId(): string {

@@ -48,15 +48,25 @@ export default function ProductsCrudPage() {
   const isEditing = useMemo(() => Boolean(draft.id), [draft.id]);
 
   useEffect(() => {
-    setProducts(loadProducts());
+    let alive = true;
+
+    (async () => {
+      const data = await loadProducts();
+      if (!alive) return;
+      setProducts(data);
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const commitProducts = (nextProducts: DashboardProduct[]) => {
-    const result = saveProducts(nextProducts);
+  const commitProducts = async (nextProducts: DashboardProduct[]) => {
+    const result = await saveProducts(nextProducts);
     if (!result.ok) {
       setError(
-        result.error === "quota"
-          ? "Gagal menyimpan. Storage penuh, coba pakai gambar lebih kecil (<= 800KB) atau hapus produk lama."
+        result.error === "network"
+          ? "Gagal menyimpan. Periksa koneksi atau backend."
           : "Gagal menyimpan perubahan. Coba lagi.",
       );
       return false;
@@ -96,12 +106,12 @@ export default function ProductsCrudPage() {
     setError("");
   };
 
-  const onDelete = (id: string) => {
+  const onDelete = async (id: string) => {
     const nextProducts = products.filter((p) => p.id !== id);
-    commitProducts(nextProducts);
+    await commitProducts(nextProducts);
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!draft.name.trim()) {
@@ -141,7 +151,7 @@ export default function ProductsCrudPage() {
       nextProducts = [next, ...products];
     }
 
-    if (commitProducts(nextProducts)) {
+    if (await commitProducts(nextProducts)) {
       closeModal();
     }
   };

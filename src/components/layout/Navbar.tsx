@@ -72,12 +72,6 @@ export default function Navbar() {
             >
               Beranda
             </Link>
-            <Link
-              to="/login"
-              className={`text-sm font-medium hover:opacity-80 transition-opacity ${textColor}`}
-            >
-              Owner
-            </Link>
             <a
               href="#features"
               className={`text-sm font-medium hover:opacity-80 transition-opacity ${textColor}`}
@@ -99,10 +93,10 @@ export default function Navbar() {
               {theme === "light" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <Link
-              to="/generate"
+              to="/login"
               className="ml-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
-              Buat Website
+              Login
             </Link>
           </div>
 
@@ -133,13 +127,6 @@ export default function Navbar() {
           >
             Beranda
           </Link>
-          <Link
-            to="/login"
-            className="text-sm font-medium text-gray-700 dark:text-gray-200 py-2"
-            onClick={() => setMobileOpen(false)}
-          >
-            Owner
-          </Link>
           <a
             href="#features"
             className="text-sm font-medium text-gray-700 dark:text-gray-200 py-2"
@@ -155,11 +142,11 @@ export default function Navbar() {
             Contoh
           </a>
           <Link
-            to="/generate"
+            to="/login"
             className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg text-center"
             onClick={() => setMobileOpen(false)}
           >
-            Buat Website
+            Login
           </Link>
         </div>
       )}
