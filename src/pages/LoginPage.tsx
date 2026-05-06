@@ -22,9 +22,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const redirectTo = useMemo(() => {
-    const state = location.state as { from?: string } | null;
-    return state?.from || "/dashboard";
+  const { redirectTo, registered } = useMemo(() => {
+    const state = location.state as
+      | { from?: string; registered?: boolean }
+      | null;
+    return {
+      redirectTo: state?.from || "/dashboard",
+      registered: Boolean(state?.registered),
+    };
   }, [location.state]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -129,6 +134,12 @@ export default function LoginPage() {
               Masuk untuk mengelola website dan produk.
             </p>
           </div>
+
+          {registered && (
+            <div className="mb-5 px-4 py-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-sm font-medium">
+              Akun berhasil dibuat. Silakan login.
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={onSubmit} className="space-y-5">

@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
     try {
       await registerWithPassword(email.trim(), password);
-      navigate("/dashboard", { replace: true });
+      navigate("/login", { replace: true, state: { registered: true } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registrasi gagal.");
     } finally {
