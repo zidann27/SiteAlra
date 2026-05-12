@@ -156,10 +156,7 @@ export default function ProductsCrudPage() {
     }
   };
 
-  const onImageChange = async (
-    file: File | null,
-    input?: HTMLInputElement,
-  ) => {
+  const onImageChange = async (file: File | null, input?: HTMLInputElement) => {
     if (!file) return;
     if (file.size > maxImageBytes) {
       setError("Ukuran gambar terlalu besar (maks 5MB).");
@@ -209,12 +206,12 @@ export default function ProductsCrudPage() {
               key={p.id}
               className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
             >
-              <div className="h-40 bg-gray-50 flex items-center justify-center overflow-hidden">
+              <div className="h-32 bg-gray-50 flex items-center justify-center overflow-hidden p-4">
                 {p.imageDataUrl ? (
                   <img
                     src={p.imageDataUrl}
                     alt={p.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <div className="text-center text-gray-400">

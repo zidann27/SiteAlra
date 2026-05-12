@@ -31,11 +31,14 @@ const STYLES: Array<{ value: UmkmStyle; label: string }> = [
 ];
 
 function applyStyleToContent(style: UmkmStyle, content: AIContent): AIContent {
+  const base: AIContent = { ...content, style };
+
   // FE-only: keep it minimal, only adjust tagline tone a bit.
   if (style === "minimal") {
-    return { ...content, tagline: content.tagline.slice(0, 60) };
+    return { ...base, tagline: content.tagline.slice(0, 60) };
   }
-  return content;
+
+  return base;
 }
 
 export default function AIGeneratorPage() {
@@ -126,6 +129,10 @@ export default function AIGeneratorPage() {
             styled.contact.email,
           address: nextProfile.address || styled.contact.address,
           hours: nextProfile.hours || styled.contact.hours,
+        },
+        brand: {
+          ...(styled.brand ?? {}),
+          logoDataUrl: nextProfile.logoDataUrl ?? styled.brand?.logoDataUrl,
         },
         colorScheme: {
           ...styled.colorScheme,

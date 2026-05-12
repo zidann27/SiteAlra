@@ -20,7 +20,8 @@ const jwtSecret = process.env.JWT_SECRET || "CHANGE_ME";
 const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
 const googleRedirectUri =
-  process.env.GOOGLE_REDIRECT_URI || "http://localhost:4000/auth/google/callback";
+  process.env.GOOGLE_REDIRECT_URI ||
+  "http://localhost:4000/auth/google/callback";
 
 const googleClient = new OAuth2Client(
   googleClientId,
@@ -107,7 +108,8 @@ function toNumber(value: unknown, fallback = 0): number {
 }
 
 app.use(cors({ origin: corsOrigin, credentials: true }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 
 app.get("/health", (_req, res) => {

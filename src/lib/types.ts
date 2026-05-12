@@ -2,6 +2,7 @@ export interface Product {
   name: string;
   description: string;
   price: string;
+  imageDataUrl?: string | null;
 }
 
 export interface ContactInfo {
@@ -17,7 +18,12 @@ export interface ColorScheme {
   accent: string;
 }
 
+export interface BrandInfo {
+  logoDataUrl?: string | null;
+}
+
 export interface AIContent {
+  style?: "modern" | "minimal" | "food" | "luxury";
   title: string;
   tagline: string;
   description: string;
@@ -26,6 +32,7 @@ export interface AIContent {
   contact: ContactInfo;
   heroImage: string;
   colorScheme: ColorScheme;
+  brand?: BrandInfo;
 }
 
 export interface GeneratedSite {

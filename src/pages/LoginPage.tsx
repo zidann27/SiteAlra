@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  ArrowLeft,
-  Sparkles,
-} from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
 import { getGoogleAuthUrl, signInWithPassword } from "../lib/auth";
 
 export default function LoginPage() {
@@ -18,14 +10,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { redirectTo, registered } = useMemo(() => {
-    const state = location.state as
-      | { from?: string; registered?: boolean }
-      | null;
+    const state = location.state as {
+      from?: string;
+      registered?: boolean;
+    } | null;
     return {
       redirectTo: state?.from || "/dashboard",
       registered: Boolean(state?.registered),
@@ -50,6 +43,7 @@ export default function LoginPage() {
 
     try {
       await signInWithPassword(email.trim(), password);
+      sessionStorage.setItem("sitealra_chat_start_new", "1");
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login gagal.");
@@ -61,23 +55,24 @@ export default function LoginPage() {
   const features = [
     "Template website profesional",
     "Kelola produk & galeri dengan mudah",
-    "Pembuatan konten bertenaga AI"
+    "Pembuatan konten bertenaga AI",
   ];
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row font-sans selection:bg-blue-100 bg-white overflow-hidden">
-      
       {/* =========================================
           LEFT PANEL: THE BRAND VISTA (TONE BIRU)
       ========================================= */}
       <div className="w-full md:w-1/2 bg-[#020617] flex items-center justify-center p-8 sm:p-16 min-h-[40vh] md:min-h-screen relative overflow-hidden">
-        
         {/* Background Image UMKM */}
-        <div 
+        <div
           className="absolute inset-0 z-0 opacity-40 bg-cover bg-center transition-transform duration-1000 hover:scale-110"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556740734-7f95834d1fb2?auto=format&fit=crop&q=80')" }}
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1556740734-7f95834d1fb2?auto=format&fit=crop&q=80')",
+          }}
         ></div>
-        
+
         {/* Gradient Overlay */}
         <div className="absolute inset-0 z-1 bg-gradient-to-br from-[#020617] via-[#020617]/90 to-blue-900/40"></div>
 
@@ -86,7 +81,8 @@ export default function LoginPage() {
 
         <div className="relative z-10 w-full max-w-md flex flex-col justify-center">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-10 tracking-tight leading-[1.15]">
-            Bangun Website<br />
+            Bangun Website
+            <br />
             Bisnis Anda
           </h1>
 
@@ -94,9 +90,14 @@ export default function LoginPage() {
             {features.map((feature, idx) => (
               <li key={idx} className="flex items-center gap-4 text-zinc-300">
                 <div className="bg-blue-500/20 p-1 rounded-full">
-                    <ArrowRight size={18} className="text-blue-400 flex-shrink-0" />
+                  <ArrowRight
+                    size={18}
+                    className="text-blue-400 flex-shrink-0"
+                  />
                 </div>
-                <span className="font-medium tracking-wide text-sm">{feature}</span>
+                <span className="font-medium tracking-wide text-sm">
+                  {feature}
+                </span>
               </li>
             ))}
           </ul>
@@ -107,7 +108,6 @@ export default function LoginPage() {
           RIGHT PANEL: THE LOGIN AREA (PUTIH + BLUR)
       ========================================= */}
       <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 sm:p-16 min-h-[60vh] md:min-h-screen relative">
-        
         {/* Efek Blur halus di latar belakang */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
@@ -121,15 +121,18 @@ export default function LoginPage() {
         </Link>
 
         <div className="w-full max-w-sm flex flex-col relative h-full justify-center z-10">
-
           {/* Logo (Hanya Tulisan) */}
           <div className="mb-6">
-            <span className="text-2xl font-bold tracking-tighter text-zinc-950">SiteAlra.</span>
+            <span className="text-2xl font-bold tracking-tighter text-zinc-950">
+              SiteAlra.
+            </span>
           </div>
 
           {/* Header Content */}
           <div className="mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">Welcome Back!</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">
+              Welcome Back!
+            </h2>
             <p className="text-zinc-500 font-medium text-sm">
               Masuk untuk mengelola website dan produk.
             </p>
@@ -143,12 +146,14 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={onSubmit} className="space-y-5">
-            
             {/* Email Input */}
             <div>
               <div className="relative group flex items-center">
                 <div className="absolute left-4 flex items-center justify-center">
-                  <Mail size={18} className="text-zinc-400 group-focus-within:text-blue-600 transition-colors" />
+                  <Mail
+                    size={18}
+                    className="text-zinc-400 group-focus-within:text-blue-600 transition-colors"
+                  />
                 </div>
                 <input
                   type="email"
@@ -167,7 +172,10 @@ export default function LoginPage() {
             <div>
               <div className="relative group flex items-center">
                 <div className="absolute left-4 flex items-center justify-center">
-                  <Lock size={18} className="text-zinc-400 group-focus-within:text-blue-600 transition-colors" />
+                  <Lock
+                    size={18}
+                    className="text-zinc-400 group-focus-within:text-blue-600 transition-colors"
+                  />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -197,7 +205,6 @@ export default function LoginPage() {
               </div>
             )}
 
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -222,11 +229,7 @@ export default function LoginPage() {
                 aria-label="Lanjutkan dengan Facebook"
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
                   <path
                     fill="#1877F2"
                     d="M24 12.07C24 5.405 18.627 0 12 0S0 5.405 0 12.07c0 6.022 4.388 11.023 10.125 11.93v-8.44H7.078v-3.49h3.047V9.43c0-3.03 1.792-4.71 4.533-4.71 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.49 0-1.953.93-1.953 1.887v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.093 24 18.092 24 12.07z"
@@ -243,11 +246,7 @@ export default function LoginPage() {
                 }}
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
                   <path
                     fill="#EA4335"
                     d="M12 10.2v3.9h5.48c-.22 1.3-1.52 3.82-5.48 3.82-3.3 0-5.99-2.7-5.99-6.02 0-3.32 2.69-6.02 5.99-6.02 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 6.98 2.4 2.88 6.53 2.88 11.9c0 5.37 4.1 9.5 9.12 9.5 5.27 0 8.74-3.72 8.74-8.97 0-.6-.06-1.05-.14-1.5H12z"
@@ -281,10 +280,8 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-
         </div>
       </div>
-
     </div>
   );
 }
