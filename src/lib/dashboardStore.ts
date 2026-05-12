@@ -38,7 +38,6 @@ export type ChatMessage = {
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
 
-const CHAT_MESSAGES_KEY = "sitealra_chat_messages_v1";
 
 function apiUrl(path: string): string {
   if (!API_BASE_URL) return path;
@@ -202,17 +201,30 @@ export async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export function loadChatMessages(): ChatMessage[] {
-  try {
-    const raw = localStorage.getItem(CHAT_MESSAGES_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ChatMessage[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+export async function loadChatMessages(): Promise<ChatMessage[]> {
+  const response = await fetch(apiUrl("/api/owner/chat"), {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: ChatMessage[];
+    error?: string;
+  }>(response);
+
+  if (!response.ok || !result.success) {
     return [];
   }
+
+  return result.data || [];
 }
 
-export function saveChatMessages(messages: ChatMessage[]): void {
-  localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
+export async function saveChatMessages(messages: ChatMessage[]): Promise<void> {
+  await fetch(apiUrl("/api/owner/chat"), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ messages }),
+  });
 }

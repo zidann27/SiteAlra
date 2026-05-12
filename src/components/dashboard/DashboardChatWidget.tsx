@@ -25,9 +25,7 @@ export default function DashboardChatWidget() {
   const [profile, setProfile] = useState(getDefaultProfile());
 
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    loadChatMessages(),
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -40,6 +38,20 @@ export default function DashboardChatWidget() {
       const data = await loadProfile();
       if (!alive) return;
       setProfile(data);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const stored = await loadChatMessages();
+      if (!alive) return;
+      setMessages(stored);
     })();
 
     return () => {
@@ -81,11 +93,11 @@ export default function DashboardChatWidget() {
     ];
 
     setMessages(initial);
-    saveChatMessages(initial);
+    void saveChatMessages(initial);
   }, [messages.length, profile.name]);
 
   useEffect(() => {
-    saveChatMessages(messages);
+    void saveChatMessages(messages);
 
     const el = listRef.current;
     if (!el) return;
