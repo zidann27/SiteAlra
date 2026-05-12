@@ -35,13 +35,30 @@ export type ChatMessage = {
   createdAt: number;
 };
 
+export type ChatThread = {
+  id: string;
+  ownerKey: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+};
+
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
+
+const CHAT_THREADS_KEY_PREFIX = "sitealra_chat_threads";
+const CHAT_ACTIVE_THREAD_KEY_PREFIX = "sitealra_chat_active_thread";
+const CHAT_MESSAGES_KEY = "sitealra_chat_messages";
 
 
 function apiUrl(path: string): string {
   if (!API_BASE_URL) return path;
   return `${API_BASE_URL.replace(/\/$/, "")}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+function userKeyed(prefix: string, userKey: string): string {
+  return `${prefix}:${userKey || "anon"}`;
 }
 
 async function parseJson<T>(response: Response): Promise<T> {
@@ -266,6 +283,24 @@ function defaultThreadTitle(ts: number): string {
   }
 }
 
+function loadLegacyChatMessages(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(CHAT_MESSAGES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ChatMessage[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m) =>
+        typeof m?.id === "string" &&
+        (m.role === "user" || m.role === "assistant") &&
+        typeof m.content === "string" &&
+        typeof m.createdAt === "number",
+    );
+  } catch {
+    return [];
+  }
+}
+
 export function loadChatThreads(userKey: string): ChatThread[] {
   try {
     const raw = localStorage.getItem(
@@ -281,7 +316,7 @@ export function loadChatThreads(userKey: string): ChatThread[] {
 
     // Migrate legacy single-thread storage for anonymous users.
     if ((userKey || "anon") === "anon") {
-      const legacy = loadChatMessages();
+      const legacy = loadLegacyChatMessages();
       if (legacy.length) {
         const now = Date.now();
         const migrated: ChatThread = {

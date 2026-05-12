@@ -1,19 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Send, X } from "lucide-react";
 import {
   getDefaultProfile,
-  createChatThread,
-  getActiveChatThreadId,
+  loadChatMessages,
   loadProfile,
-  loadChatThreads,
   newId,
-  saveChatThreads,
-  setActiveChatThreadId,
+  saveChatMessages,
   type ChatMessage,
-  type ChatThread,
 } from "../../lib/dashboardStore";
 import { sendDashboardChat } from "../../lib/chat";
-import { fetchSessionUser, getSessionUser } from "../../lib/auth";
 
 function formatTime(ts: number): string {
   try {
@@ -29,17 +24,11 @@ function formatTime(ts: number): string {
 export default function DashboardChatWidget() {
   const [profile, setProfile] = useState(getDefaultProfile());
 
-  const [sessionUser, setSessionUser] = useState(() => getSessionUser());
-  const userKey = useMemo(
-    () => sessionUser?.id || sessionUser?.email || "anon",
-    [sessionUser?.id, sessionUser?.email],
-  );
-
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [loadedUserKey, setLoadedUserKey] = useState(userKey);
 
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -64,6 +53,7 @@ export default function DashboardChatWidget() {
       const stored = await loadChatMessages();
       if (!alive) return;
       setMessages(stored);
+      setMessagesLoaded(true);
     })();
 
     return () => {
@@ -72,72 +62,34 @@ export default function DashboardChatWidget() {
   }, []);
 
   useEffect(() => {
-    if (messages.length === 0) return;
-    const first = messages[0];
-    if (
-      first?.role === "assistant" &&
-      typeof first.content === "string" &&
-      first.content.toLowerCase().includes("belum tersambung")
-    ) {
-      const updated: ChatMessage[] = [
-        {
-          id: newId(),
-          role: "assistant",
-          content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nTanya apa aja soal ide promo, caption, pricing, SOP harian, atau rencana kerja.`,
-          createdAt: Date.now(),
-        },
-      ];
+    if (!messagesLoaded) return;
+    if (messages.length > 0) return;
 
-      const thread = createChatThread({ userKey, messages: initialMessages });
-      const next = [thread];
-      saveChatThreads(userKey, next);
-      setActiveChatThreadId(userKey, thread.id);
-      return { nextThreads: next, nextActiveId: thread.id };
-    };
-
-    const { nextThreads, nextActiveId } = ensureInitial();
-    setThreads(nextThreads);
-    setActiveThreadIdState(nextActiveId);
+    const initial: ChatMessage[] = [
+      {
+        id: newId(),
+        role: "assistant",
+        content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nTanya apa aja soal ide promo, caption, pricing, SOP harian, atau rencana kerja.`,
+        createdAt: Date.now(),
+      },
+    ];
 
     setMessages(initial);
     void saveChatMessages(initial);
-  }, [messages.length, profile.name]);
+  }, [messages.length, profile.name, messagesLoaded]);
 
   useEffect(() => {
+    if (!messagesLoaded) return;
     void saveChatMessages(messages);
 
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages, activeThreadId, userKey, loadedUserKey]);
+  }, [messages, messagesLoaded]);
 
-  const setActiveThread = (threadId: string, nextThreads?: ChatThread[]) => {
-    setActiveThreadIdState(threadId);
-    setActiveChatThreadId(userKey, threadId);
-    const list = nextThreads || threads;
-    const t = list.find((x) => x.id === threadId);
-    setMessages(t?.messages || []);
-  };
-
-  const onNewChat = () => {
-    const initialMessages: ChatMessage[] = [
-      {
-        id: newId(),
-        role: "assistant",
-        content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nChat baru sudah dimulai. Tanyakan apa saja!`,
-        createdAt: Date.now(),
-      },
-    ];
-    const thread = createChatThread({ userKey, messages: initialMessages });
-    const nextThreads = [thread, ...threads];
-    setThreads(nextThreads);
-    saveChatThreads(userKey, nextThreads);
-    setActiveThread(thread.id, nextThreads);
-  };
-
-  const onSend = () => {
-    const text = input.trim();
-    if (!text || sending) return;
+  const sendMessage = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
 
     setSending(true);
     setInput("");
@@ -145,7 +97,7 @@ export default function DashboardChatWidget() {
     const userMsg: ChatMessage = {
       id: newId(),
       role: "user",
-      content: text,
+      content: trimmed,
       createdAt: Date.now(),
     };
 
@@ -156,7 +108,7 @@ export default function DashboardChatWidget() {
 
     setMessages((prev) => [...prev, userMsg]);
 
-    sendDashboardChat(text, history)
+    sendDashboardChat(trimmed, history)
       .then((reply) => {
         const assistantMsg: ChatMessage = {
           id: newId(),
@@ -203,6 +155,10 @@ export default function DashboardChatWidget() {
       });
   };
 
+  const onSend = () => {
+    sendMessage(input);
+  };
+
   return (
     <>
       {open && (
@@ -214,40 +170,15 @@ export default function DashboardChatWidget() {
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-gray-900 truncate">
-                  Asisten UMKM
+                  SIRA
                 </div>
                 <div className="text-xs text-gray-400 truncate">
-                  {profile.name ? profile.name : "Profil belum diisi"}
+                  SiteAlra Intelligent Response Assistant
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <select
-                value={activeThreadId}
-                onChange={(e) => setActiveThread(e.target.value)}
-                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                aria-label="Pilih riwayat chat"
-              >
-                {threads
-                  .slice()
-                  .sort((a, b) => b.updatedAt - a.updatedAt)
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.title}
-                    </option>
-                  ))}
-              </select>
-
-              <button
-                type="button"
-                onClick={onNewChat}
-                className="px-2 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[11px] font-semibold text-gray-700 transition-colors"
-                title="Chat baru"
-              >
-                Baru
-              </button>
-
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -274,7 +205,7 @@ export default function DashboardChatWidget() {
                   >
                     <div className="max-w-[85%]">
                       <div
-                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] border ${
+                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] border ${
                           isUser
                             ? "bg-blue-600 text-white border-blue-600"
                             : "bg-gray-50 text-gray-800 border-gray-100"
@@ -306,7 +237,30 @@ export default function DashboardChatWidget() {
             </div>
 
             <div className="mt-3">
-              <div className="flex items-end gap-2">
+              <div className="mb-2 flex flex-wrap justify-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => sendMessage("Apa itu SiteAlra?")}
+                  className="px-3 py-1.5 rounded-full bg-white text-gray-700 text-[11px] font-semibold border border-gray-200 shadow-sm hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 hover:-translate-y-0.5 hover:shadow transition-all"
+                >
+                  Apa itu SiteAlra?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendMessage("Berapa biaya?")}
+                  className="px-3 py-1.5 rounded-full bg-white text-gray-700 text-[11px] font-semibold border border-gray-200 shadow-sm hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 hover:-translate-y-0.5 hover:shadow transition-all"
+                >
+                  Berapa biaya?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendMessage("Butuh coding?")}
+                  className="px-3 py-1.5 rounded-full bg-white text-gray-700 text-[11px] font-semibold border border-gray-200 shadow-sm hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 hover:-translate-y-0.5 hover:shadow transition-all"
+                >
+                  Butuh coding?
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -325,15 +279,11 @@ export default function DashboardChatWidget() {
                   type="button"
                   onClick={onSend}
                   disabled={!input.trim() || sending}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-2xl transition-colors text-sm"
+                  className="inline-flex items-center justify-center gap-2 h-12 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-2xl transition-colors text-sm"
                   title="Kirim"
                 >
                   <Send size={16} />
                 </button>
-              </div>
-
-              <div className="mt-2 text-xs text-gray-400">
-                Enter kirim, Shift+Enter baris baru.
               </div>
             </div>
           </div>

@@ -230,7 +230,7 @@ export default function ChatbotPage() {
             </div>
             <div className="min-w-0">
               <div className="font-bold text-gray-900 truncate">
-                Asisten UMKM
+                SIRA
               </div>
               <div className="text-xs text-gray-400 truncate">
                 Konteks: {profile.name ? profile.name : "belum diisi"}

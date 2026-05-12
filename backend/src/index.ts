@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./db.js";
 import { generateSlug } from "./slug.js";
 import { generateWithOpenAI, type GenerateRequest } from "./ai.js";
@@ -77,6 +78,8 @@ function requireAuth(
   next();
 }
 
+type JsonInput = Prisma.InputJsonValue | Prisma.NullTypes.JsonNull;
+
 function defaultProfileData() {
   return {
     name: "",
@@ -92,10 +95,16 @@ function defaultProfileData() {
     domainName: "",
     logoDataUrl: null as string | null,
     themeColor: "#2563eb",
-    aiContent: null as unknown | null,
+    aiContent: Prisma.JsonNull as JsonInput,
     websiteActive: false,
     visitorTotal: 0,
   };
+}
+
+function toJsonValue(value: unknown): JsonInput | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return Prisma.JsonNull;
+  return value as Prisma.InputJsonValue;
 }
 
 function toNumber(value: unknown, fallback = 0): number {
@@ -305,7 +314,6 @@ app.get("/auth/google/callback", async (req, res) => {
     res.clearCookie(oauthStateCookieName, { path: "/" });
     return res.redirect(`${frontendUrl}/dashboard`);
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("Google OAuth error:", err);
     return res.status(500).send("Google login failed.");
   }
@@ -346,7 +354,7 @@ app.put("/api/owner/profile", requireAuth, async (req, res) => {
     domainName: body.domainName ?? undefined,
     logoDataUrl: body.logoDataUrl ?? undefined,
     themeColor: body.themeColor ?? undefined,
-    aiContent: body.aiContent ?? undefined,
+    aiContent: toJsonValue(body.aiContent),
     websiteActive:
       typeof body.websiteActive === "boolean" ? body.websiteActive : undefined,
     visitorTotal:
@@ -490,13 +498,22 @@ app.put("/api/owner/chat", requireAuth, async (req, res) => {
     }
   }
 
-  const createData = messages.map((msg) => ({
-    id: msg.id,
-    userId: user.id,
-    role: msg.role,
-    content: msg.content,
-    createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date(),
-  }));
+  const createData = messages
+    .filter(
+      (msg): msg is {
+        id?: string;
+        role: string;
+        content: string;
+        createdAt?: number;
+      } => Boolean(msg.role && msg.content),
+    )
+    .map((msg) => ({
+      id: msg.id,
+      userId: user.id,
+      role: msg.role,
+      content: msg.content,
+      createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+    }));
 
   await prisma.$transaction([
     prisma.userChatMessage.deleteMany({ where: { userId: user.id } }),
@@ -618,7 +635,7 @@ app.post("/api/sites", async (req, res) => {
       businessDescription: body.businessDescription,
       category: body.category,
       slug: uniqueSlug,
-      aiContent: body.aiContent as any,
+      aiContent: toJsonValue(body.aiContent) ?? Prisma.JsonNull,
       ownerId: authUser?.id || null,
     },
   });
@@ -753,6 +770,5 @@ app.delete("/api/products/:id", async (req, res) => {
 });
 
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
   console.log(`API listening on http://localhost:${port}`);
 });
