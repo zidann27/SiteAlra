@@ -36,13 +36,6 @@ export default function DashboardChatWidget() {
   );
 
   const [open, setOpen] = useState(false);
-  const [threads, setThreads] = useState<ChatThread[]>(() =>
-    loadChatThreads(userKey),
-  );
-  const [activeThreadId, setActiveThreadIdState] = useState<string>(() => {
-    const threadsNow = loadChatThreads(userKey);
-    return getActiveChatThreadId(userKey) || threadsNow[0]?.id || "";
-  });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -65,32 +58,28 @@ export default function DashboardChatWidget() {
   }, []);
 
   useEffect(() => {
-    // Sync session user from backend cookie session to avoid stale localStorage.
-    fetchSessionUser().then((u) => setSessionUser(u));
+    let alive = true;
+
+    (async () => {
+      const stored = await loadChatMessages();
+      if (!alive) return;
+      setMessages(stored);
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
-    // Initialize threads + active thread per user.
-    setThreads([]);
-    setMessages([]);
-    setActiveThreadIdState("");
-
-    const existingThreads = loadChatThreads(userKey);
-
-    const ensureInitial = (): {
-      nextThreads: ChatThread[];
-      nextActiveId: string;
-    } => {
-      if (existingThreads.length) {
-        const storedActive = getActiveChatThreadId(userKey);
-        const activeId =
-          (storedActive && existingThreads.some((t) => t.id === storedActive)
-            ? storedActive
-            : existingThreads[0].id) || "";
-        return { nextThreads: existingThreads, nextActiveId: activeId };
-      }
-
-      const initialMessages: ChatMessage[] = [
+    if (messages.length === 0) return;
+    const first = messages[0];
+    if (
+      first?.role === "assistant" &&
+      typeof first.content === "string" &&
+      first.content.toLowerCase().includes("belum tersambung")
+    ) {
+      const updated: ChatMessage[] = [
         {
           id: newId(),
           role: "assistant",
@@ -110,22 +99,12 @@ export default function DashboardChatWidget() {
     setThreads(nextThreads);
     setActiveThreadIdState(nextActiveId);
 
-    const activeThread = nextThreads.find((t) => t.id === nextActiveId);
-    setMessages(activeThread?.messages || []);
-    setLoadedUserKey(userKey);
-  }, [userKey]);
+    setMessages(initial);
+    void saveChatMessages(initial);
+  }, [messages.length, profile.name]);
 
   useEffect(() => {
-    if (loadedUserKey !== userKey) return;
-    if (!activeThreadId) return;
-
-    setThreads((prev) => {
-      const next = prev.map((t) =>
-        t.id === activeThreadId ? { ...t, messages, updatedAt: Date.now() } : t,
-      );
-      saveChatThreads(userKey, next);
-      return next;
-    });
+    void saveChatMessages(messages);
 
     const el = listRef.current;
     if (!el) return;

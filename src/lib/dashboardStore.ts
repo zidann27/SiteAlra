@@ -38,22 +38,6 @@ export type ChatMessage = {
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
 
-const CHAT_MESSAGES_KEY = "sitealra_chat_messages_v1";
-const CHAT_THREADS_KEY_PREFIX = "sitealra_chat_threads_v1:";
-const CHAT_ACTIVE_THREAD_KEY_PREFIX = "sitealra_chat_active_thread_v1:";
-
-export type ChatThread = {
-  id: string;
-  ownerKey?: string;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-  messages: ChatMessage[];
-};
-
-function userKeyed(prefix: string, userKey: string): string {
-  return `${prefix}${userKey || "anon"}`;
-}
 
 function apiUrl(path: string): string {
   if (!API_BASE_URL) return path;
@@ -240,19 +224,32 @@ export async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export function loadChatMessages(): ChatMessage[] {
-  try {
-    const raw = localStorage.getItem(CHAT_MESSAGES_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as ChatMessage[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+export async function loadChatMessages(): Promise<ChatMessage[]> {
+  const response = await fetch(apiUrl("/api/owner/chat"), {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const result = await parseJson<{
+    success: boolean;
+    data?: ChatMessage[];
+    error?: string;
+  }>(response);
+
+  if (!response.ok || !result.success) {
     return [];
   }
+
+  return result.data || [];
 }
 
-export function saveChatMessages(messages: ChatMessage[]): void {
-  localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(messages));
+export async function saveChatMessages(messages: ChatMessage[]): Promise<void> {
+  await fetch(apiUrl("/api/owner/chat"), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ messages }),
+  });
 }
 
 function defaultThreadTitle(ts: number): string {

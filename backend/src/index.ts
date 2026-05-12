@@ -448,6 +448,66 @@ app.put("/api/owner/products", requireAuth, async (req, res) => {
   });
 });
 
+app.get("/api/owner/chat", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const limit = Math.min(Number(req.query.limit || 100), 200);
+
+  const messages = await prisma.userChatMessage.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "asc" },
+    take: limit,
+  });
+
+  return res.json({
+    success: true,
+    data: messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      createdAt: msg.createdAt.getTime(),
+    })),
+  });
+});
+
+app.put("/api/owner/chat", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const body = req.body as {
+    messages?: Array<{
+      id?: string;
+      role?: string;
+      content?: string;
+      createdAt?: number;
+    }>;
+  };
+
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+
+  for (const msg of messages) {
+    if (!msg.role || !msg.content) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Pesan chat tidak valid." });
+    }
+  }
+
+  const createData = messages.map((msg) => ({
+    id: msg.id,
+    userId: user.id,
+    role: msg.role,
+    content: msg.content,
+    createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+  }));
+
+  await prisma.$transaction([
+    prisma.userChatMessage.deleteMany({ where: { userId: user.id } }),
+    ...(createData.length
+      ? [prisma.userChatMessage.createMany({ data: createData })]
+      : []),
+  ]);
+
+  return res.json({ success: true });
+});
+
 app.post("/api/generate-website", async (req, res) => {
   const body = req.body as Partial<GenerateRequest>;
   if (!body.businessName || !body.businessDescription || !body.category) {
