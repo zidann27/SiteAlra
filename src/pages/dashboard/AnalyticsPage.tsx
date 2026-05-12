@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { BarChart3, MousePointerClick, Percent, Users } from "lucide-react";
 import { getVisitorTotal, loadProducts } from "../../lib/dashboardStore";
 
@@ -58,7 +58,8 @@ export default function AnalyticsPage() {
 
   // Dummy values (FE-only)
   const clickCta = Math.max(0, Math.round(visitorTotal * 0.12));
-  const conversionRate = visitorTotal > 0 ? Math.round((clickCta / visitorTotal) * 100) : 0;
+  const conversionRate =
+    visitorTotal > 0 ? Math.round((clickCta / visitorTotal) * 100) : 0;
 
   const chart = [
     { label: "Sen", value: 12 },
@@ -75,10 +76,10 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics</h1>
-        <p className="text-gray-500 mt-2">
-          Statistik ringkas untuk dashboard.
-        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Analytics
+        </h1>
+        <p className="text-gray-500 mt-2">Statistik ringkas untuk dashboard.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -121,7 +122,9 @@ export default function AnalyticsPage() {
             <div key={c.label} className="flex flex-col items-center gap-2">
               <div
                 className="w-full rounded-xl bg-blue-600/90"
-                style={{ height: `${Math.max(8, Math.round((c.value / max) * 100))}%` }}
+                style={{
+                  height: `${Math.max(8, Math.round((c.value / max) * 100))}%`,
+                }}
                 title={`${c.value}`}
               />
               <div className="text-xs text-gray-400">{c.label}</div>

@@ -5,7 +5,7 @@ export async function sendDashboardChat(
   message: string,
   history: Array<{ role: "user" | "assistant"; content: string }>,
 ): Promise<string> {
-  const profile = loadProfile();
+  const profile = await loadProfile();
 
   const res = await chatWithAssistant({
     message,

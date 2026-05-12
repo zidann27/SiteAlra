@@ -45,8 +45,8 @@ export default function DashboardLayout() {
   const sidebarWidth = collapsed ? "md:w-24" : "md:w-64";
   const contentPadding = collapsed ? "md:pl-24" : "md:pl-64";
 
-  const onLogout = () => {
-    signOut();
+  const onLogout = async () => {
+    await signOut();
     navigate("/login", { replace: true });
   };
 

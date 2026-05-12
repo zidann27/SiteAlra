@@ -12,9 +12,7 @@ import {
 } from "../../lib/dashboardStore";
 import type { AIContent } from "../../lib/types";
 
-function mapProductsToAI(
-  products: DashboardProduct[],
-): AIContent["products"] {
+function mapProductsToAI(products: DashboardProduct[]): AIContent["products"] {
   return products.map((p) => ({
     name: p.name,
     description: p.description || "",
@@ -22,6 +20,7 @@ function mapProductsToAI(
       style: "currency",
       currency: "IDR",
     }).format(p.price),
+    imageDataUrl: p.imageDataUrl,
   }));
 }
 
@@ -59,6 +58,7 @@ export default function WebsitePreviewPage() {
 
       const merged: AIContent = {
         ...ai,
+        style: profileData.style,
         title: profileData.name || ai.title,
         contact: {
           phone: profileData.phone || ai.contact.phone,
@@ -68,6 +68,10 @@ export default function WebsitePreviewPage() {
             ai.contact.email,
           address: profileData.address || ai.contact.address,
           hours: profileData.hours || ai.contact.hours,
+        },
+        brand: {
+          ...(ai.brand ?? {}),
+          logoDataUrl: profileData.logoDataUrl ?? ai.brand?.logoDataUrl,
         },
         products: products.length ? mapProductsToAI(products) : ai.products,
         colorScheme: {

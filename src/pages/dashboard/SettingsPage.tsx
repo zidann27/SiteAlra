@@ -24,6 +24,8 @@ export default function SettingsPage() {
     themeColor: "#2563eb",
   });
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const maxImageBytes = 5 * 1024 * 1024;
 
   useEffect(() => {
     let alive = true;
@@ -41,13 +43,27 @@ export default function SettingsPage() {
 
   const onSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    await saveProfile(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setError("");
+    try {
+      await saveProfile(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaved(false);
+      setError(
+        err instanceof Error ? err.message : "Gagal menyimpan settings.",
+      );
+    }
   };
 
-  const onLogo = async (file: File | null) => {
+  const onLogo = async (file: File | null, input?: HTMLInputElement) => {
     if (!file) return;
+    if (file.size > maxImageBytes) {
+      setError("Ukuran logo terlalu besar (maks 5MB).");
+      setForm((f) => ({ ...f, logoDataUrl: null }));
+      if (input) input.value = "";
+      return;
+    }
     const dataUrl = await fileToDataUrl(file);
     setForm((f) => ({ ...f, logoDataUrl: dataUrl }));
   };
@@ -58,9 +74,9 @@ export default function SettingsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Settings
         </h1>
-          <p className="text-gray-500 mt-2">
-            Pengaturan UMKM tersimpan di akun kamu.
-          </p>
+        <p className="text-gray-500 mt-2">
+          Pengaturan UMKM tersimpan di akun kamu.
+        </p>
       </div>
 
       <form
@@ -99,11 +115,17 @@ export default function SettingsPage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => onLogo(e.target.files?.[0] ?? null)}
+                onChange={(e) => onLogo(e.target.files?.[0] ?? null, e.target)}
                 className="text-sm text-gray-600"
               />
             </div>
           </div>
+
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">

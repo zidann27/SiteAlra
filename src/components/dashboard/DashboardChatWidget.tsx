@@ -1,14 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Send, X } from "lucide-react";
 import {
   getDefaultProfile,
-  loadChatMessages,
+  createChatThread,
+  getActiveChatThreadId,
   loadProfile,
+  loadChatThreads,
   newId,
-  saveChatMessages,
+  saveChatThreads,
+  setActiveChatThreadId,
   type ChatMessage,
+  type ChatThread,
 } from "../../lib/dashboardStore";
 import { sendDashboardChat } from "../../lib/chat";
+import { fetchSessionUser, getSessionUser } from "../../lib/auth";
 
 function formatTime(ts: number): string {
   try {
@@ -24,12 +29,24 @@ function formatTime(ts: number): string {
 export default function DashboardChatWidget() {
   const [profile, setProfile] = useState(getDefaultProfile());
 
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    loadChatMessages(),
+  const [sessionUser, setSessionUser] = useState(() => getSessionUser());
+  const userKey = useMemo(
+    () => sessionUser?.id || sessionUser?.email || "anon",
+    [sessionUser?.id, sessionUser?.email],
   );
+
+  const [open, setOpen] = useState(false);
+  const [threads, setThreads] = useState<ChatThread[]>(() =>
+    loadChatThreads(userKey),
+  );
+  const [activeThreadId, setActiveThreadIdState] = useState<string>(() => {
+    const threadsNow = loadChatThreads(userKey);
+    return getActiveChatThreadId(userKey) || threadsNow[0]?.id || "";
+  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [loadedUserKey, setLoadedUserKey] = useState(userKey);
 
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,49 +65,96 @@ export default function DashboardChatWidget() {
   }, []);
 
   useEffect(() => {
-    if (messages.length === 0) return;
-    const first = messages[0];
-    if (
-      first?.role === "assistant" &&
-      typeof first.content === "string" &&
-      first.content.toLowerCase().includes("belum tersambung")
-    ) {
-      const updated: ChatMessage[] = [
-        {
-          ...first,
-          content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nTanya apa aja soal ide promo, caption, pricing, SOP harian, atau rencana kerja.`,
-        },
-        ...messages.slice(1),
-      ];
-      setMessages(updated);
-    }
-    // Only run on mount to migrate old stored message.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Sync session user from backend cookie session to avoid stale localStorage.
+    fetchSessionUser().then((u) => setSessionUser(u));
   }, []);
 
   useEffect(() => {
-    if (messages.length > 0) return;
+    // Initialize threads + active thread per user.
+    setThreads([]);
+    setMessages([]);
+    setActiveThreadIdState("");
 
-    const initial: ChatMessage[] = [
-      {
-        id: newId(),
-        role: "assistant",
-        content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nTanya apa aja soal ide promo, caption, pricing, SOP harian, atau rencana kerja.`,
-        createdAt: Date.now(),
-      },
-    ];
+    const existingThreads = loadChatThreads(userKey);
 
-    setMessages(initial);
-    saveChatMessages(initial);
-  }, [messages.length, profile.name]);
+    const ensureInitial = (): {
+      nextThreads: ChatThread[];
+      nextActiveId: string;
+    } => {
+      if (existingThreads.length) {
+        const storedActive = getActiveChatThreadId(userKey);
+        const activeId =
+          (storedActive && existingThreads.some((t) => t.id === storedActive)
+            ? storedActive
+            : existingThreads[0].id) || "";
+        return { nextThreads: existingThreads, nextActiveId: activeId };
+      }
+
+      const initialMessages: ChatMessage[] = [
+        {
+          id: newId(),
+          role: "assistant",
+          content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nTanya apa aja soal ide promo, caption, pricing, SOP harian, atau rencana kerja.`,
+          createdAt: Date.now(),
+        },
+      ];
+
+      const thread = createChatThread({ userKey, messages: initialMessages });
+      const next = [thread];
+      saveChatThreads(userKey, next);
+      setActiveChatThreadId(userKey, thread.id);
+      return { nextThreads: next, nextActiveId: thread.id };
+    };
+
+    const { nextThreads, nextActiveId } = ensureInitial();
+    setThreads(nextThreads);
+    setActiveThreadIdState(nextActiveId);
+
+    const activeThread = nextThreads.find((t) => t.id === nextActiveId);
+    setMessages(activeThread?.messages || []);
+    setLoadedUserKey(userKey);
+  }, [userKey]);
 
   useEffect(() => {
-    saveChatMessages(messages);
+    if (loadedUserKey !== userKey) return;
+    if (!activeThreadId) return;
+
+    setThreads((prev) => {
+      const next = prev.map((t) =>
+        t.id === activeThreadId ? { ...t, messages, updatedAt: Date.now() } : t,
+      );
+      saveChatThreads(userKey, next);
+      return next;
+    });
 
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, activeThreadId, userKey, loadedUserKey]);
+
+  const setActiveThread = (threadId: string, nextThreads?: ChatThread[]) => {
+    setActiveThreadIdState(threadId);
+    setActiveChatThreadId(userKey, threadId);
+    const list = nextThreads || threads;
+    const t = list.find((x) => x.id === threadId);
+    setMessages(t?.messages || []);
+  };
+
+  const onNewChat = () => {
+    const initialMessages: ChatMessage[] = [
+      {
+        id: newId(),
+        role: "assistant",
+        content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nChat baru sudah dimulai. Tanyakan apa saja!`,
+        createdAt: Date.now(),
+      },
+    ];
+    const thread = createChatThread({ userKey, messages: initialMessages });
+    const nextThreads = [thread, ...threads];
+    setThreads(nextThreads);
+    saveChatThreads(userKey, nextThreads);
+    setActiveThread(thread.id, nextThreads);
+  };
 
   const onSend = () => {
     const text = input.trim();
@@ -179,15 +243,42 @@ export default function DashboardChatWidget() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="p-2 rounded-2xl hover:bg-gray-50 text-gray-600 transition-colors"
-              aria-label="Close chat"
-              title="Close"
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={activeThreadId}
+                onChange={(e) => setActiveThread(e.target.value)}
+                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white text-[11px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                aria-label="Pilih riwayat chat"
+              >
+                {threads
+                  .slice()
+                  .sort((a, b) => b.updatedAt - a.updatedAt)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={onNewChat}
+                className="px-2 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[11px] font-semibold text-gray-700 transition-colors"
+                title="Chat baru"
+              >
+                Baru
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="p-2 rounded-2xl hover:bg-gray-50 text-gray-600 transition-colors"
+                aria-label="Close chat"
+                title="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="p-4 flex-1 min-h-0 flex flex-col">
