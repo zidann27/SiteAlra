@@ -1,7 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
-import { getGoogleAuthUrl, signInWithPassword } from "../lib/auth";
+import {
+  getFacebookAuthUrl,
+  getGoogleAuthUrl,
+  signInWithPassword,
+} from "../lib/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -227,6 +231,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 aria-label="Lanjutkan dengan Facebook"
+                onClick={() => {
+                  window.location.href = getFacebookAuthUrl();
+                }}
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">

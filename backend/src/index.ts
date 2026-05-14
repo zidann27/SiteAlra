@@ -23,6 +23,11 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
 const googleRedirectUri =
   process.env.GOOGLE_REDIRECT_URI ||
   "http://localhost:4000/auth/google/callback";
+const facebookClientId = process.env.FACEBOOK_CLIENT_ID || "";
+const facebookClientSecret = process.env.FACEBOOK_CLIENT_SECRET || "";
+const facebookRedirectUri =
+  process.env.FACEBOOK_REDIRECT_URI ||
+  "http://localhost:4000/auth/facebook/callback";
 
 const googleClient = new OAuth2Client(
   googleClientId,
@@ -35,6 +40,7 @@ type AuthedRequest = express.Request & { user: AuthUser };
 
 const authCookieName = "sitealra_token";
 const oauthStateCookieName = "sitealra_oauth_state";
+const facebookStateCookieName = "sitealra_oauth_state_fb";
 const authCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
@@ -247,6 +253,35 @@ app.get("/auth/google", (_req, res) => {
   return res.redirect(url);
 });
 
+app.get("/auth/facebook", (_req, res) => {
+  if (!facebookClientId || !facebookClientSecret) {
+    return res
+      .status(500)
+      .json({ success: false, error: "Facebook OAuth belum dikonfigurasi." });
+  }
+
+  const state = crypto.randomUUID();
+  res.cookie(facebookStateCookieName, state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    maxAge: 10 * 60 * 1000,
+    path: "/",
+  });
+
+  const params = new URLSearchParams({
+    client_id: facebookClientId,
+    redirect_uri: facebookRedirectUri,
+    state,
+    scope: "email,public_profile",
+    response_type: "code",
+  });
+
+  return res.redirect(
+    `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`,
+  );
+});
+
 app.get("/auth/google/callback", async (req, res) => {
   const code = String(req.query.code || "");
   const state = String(req.query.state || "");
@@ -316,6 +351,105 @@ app.get("/auth/google/callback", async (req, res) => {
   } catch (err) {
     console.error("Google OAuth error:", err);
     return res.status(500).send("Google login failed.");
+  }
+});
+
+app.get("/auth/facebook/callback", async (req, res) => {
+  const code = String(req.query.code || "");
+  const state = String(req.query.state || "");
+  const storedState = req.cookies?.[facebookStateCookieName];
+
+  if (!code || !state || !storedState || state !== storedState) {
+    return res.status(400).send("Invalid OAuth state.");
+  }
+
+  try {
+    const tokenParams = new URLSearchParams({
+      client_id: facebookClientId,
+      client_secret: facebookClientSecret,
+      redirect_uri: facebookRedirectUri,
+      code,
+    });
+
+    const tokenRes = await fetch(
+      `https://graph.facebook.com/v19.0/oauth/access_token?${tokenParams.toString()}`,
+    );
+    const tokenData = (await tokenRes.json()) as {
+      access_token?: string;
+      error?: { message?: string };
+    };
+
+    if (!tokenRes.ok || !tokenData.access_token) {
+      const message = tokenData.error?.message || "Failed to get Facebook token.";
+      return res.status(400).send(message);
+    }
+
+    const profileRes = await fetch(
+      `https://graph.facebook.com/me?fields=id,name,email&access_token=${encodeURIComponent(
+        tokenData.access_token,
+      )}`,
+    );
+    const profile = (await profileRes.json()) as {
+      id?: string;
+      name?: string;
+      email?: string;
+      error?: { message?: string };
+    };
+
+    if (!profileRes.ok || !profile.id) {
+      const message = profile.error?.message || "Invalid Facebook profile.";
+      return res.status(400).send(message);
+    }
+
+    const email = profile.email?.toLowerCase() || "";
+    const providerId = profile.id;
+    const name = profile.name || null;
+
+    if (!email) {
+      return res.status(400).send("Facebook account has no email.");
+    }
+
+    let user = await prisma.user.findFirst({
+      where: { provider: "facebook", providerId },
+    });
+
+    if (!user) {
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingByEmail) {
+        user = await prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            provider: existingByEmail.provider || "facebook",
+            providerId: existingByEmail.providerId || providerId,
+            name: existingByEmail.name || name,
+          },
+        });
+      } else {
+        user = await prisma.user.create({
+          data: {
+            email,
+            name,
+            provider: "facebook",
+            providerId,
+          },
+        });
+      }
+    }
+
+    const token = signAuthToken({
+      id: user.id,
+      email: user.email,
+      name: user.name ?? null,
+    });
+    res.cookie(authCookieName, token, authCookieOptions);
+    res.clearCookie(facebookStateCookieName, { path: "/" });
+    return res.redirect(`${frontendUrl}/dashboard`);
+  } catch (err) {
+    console.error("Facebook OAuth error:", err);
+    return res.status(500).send("Facebook login failed.");
   }
 });
 

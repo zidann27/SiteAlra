@@ -117,6 +117,10 @@ export function getGoogleAuthUrl(): string {
   return apiUrl("/auth/google");
 }
 
+export function getFacebookAuthUrl(): string {
+  return apiUrl("/auth/facebook");
+}
+
 export async function signOut(): Promise<void> {
   localStorage.removeItem(SESSION_KEY);
   await fetch(apiUrl("/auth/logout"), {
