@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Info, Loader2 } from "lucide-react";
-import { generateWebsiteContent } from "../../lib/api";
+import { chatWithAssistant, generateWebsiteContent } from "../../lib/api";
 import type { AIContent } from "../../lib/types";
 import {
   getDefaultProfile,
@@ -51,6 +51,9 @@ export default function AIGeneratorPage() {
   const [shortDescription, setShortDescription] = useState("");
   const [targetCustomers, setTargetCustomers] = useState("");
   const [style, setStyle] = useState<UmkmStyle>(initial.style);
+  const [descPrompt, setDescPrompt] = useState("");
+
+  const [generatingDesc, setGeneratingDesc] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -74,6 +77,40 @@ export default function AIGeneratorPage() {
       alive = false;
     };
   }, []);
+
+  const onGenerateDescription = async () => {
+    if (loadingProfile || generatingDesc) return;
+
+    if (!umkmName.trim()) {
+      setError("Nama UMKM wajib diisi sebelum generate deskripsi.");
+      return;
+    }
+
+    if (!descPrompt.trim()) {
+      setError("Tulis permintaan deskripsi dulu.");
+      return;
+    }
+
+    setError("");
+    setGeneratingDesc(true);
+
+    try {
+      const message = `Buat deskripsi singkat (1-3 kalimat) untuk bisnis berikut.\nNama: ${umkmName}\nJenis usaha: ${businessType}\nTarget pelanggan: ${targetCustomers || "-"}\nKebutuhan pengguna: ${descPrompt}\nGunakan bahasa Indonesia, tanpa Markdown.`;
+      const res = await chatWithAssistant({
+        message,
+        context: {
+          businessName: umkmName,
+          businessType,
+          targetCustomers,
+        },
+      });
+      setShortDescription(res.reply.trim());
+    } catch {
+      setError("Gagal generate deskripsi. Coba lagi sebentar.");
+    } finally {
+      setGeneratingDesc(false);
+    }
+  };
 
   const onGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,9 +236,32 @@ export default function AIGeneratorPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Deskripsi singkat <span className="text-red-500">*</span>
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Deskripsi singkat <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={onGenerateDescription}
+                disabled={generatingDesc}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-60"
+              >
+                {generatingDesc ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Sparkles size={14} />
+                )}
+                Generate AI
+              </button>
+            </div>
+            <input
+              type="text"
+              value={descPrompt}
+              onChange={(e) => setDescPrompt(e.target.value)}
+              placeholder="Mau bikin deskripsi tentang apa? AI bakal bantu bikinin deskripsinya"
+              className="w-full mb-3 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400 text-sm"
+              maxLength={200}
+            />
             <textarea
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}

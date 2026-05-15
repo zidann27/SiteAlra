@@ -737,9 +737,13 @@ app.get("/api/owner/chat/threads", requireAuth, async (req, res) => {
     include: { _count: { select: { messages: true } } },
   });
 
+  type ChatThreadRow = Prisma.UserChatThreadGetPayload<{
+    include: { _count: { select: { messages: true } } };
+  }>;
+
   return res.json({
     success: true,
-    data: threads.map((t) => ({
+    data: (threads as ChatThreadRow[]).map((t) => ({
       id: t.id,
       title: t.title,
       createdAt: t.createdAt.getTime(),
