@@ -48,7 +48,9 @@ export default function LoginPage() {
     try {
       await signInWithPassword(email.trim(), password);
       sessionStorage.setItem("sitealra_chat_start_new", "1");
-      navigate(redirectTo, { replace: true });
+      const target = new URL(redirectTo, window.location.origin);
+      target.searchParams.set("startNew", "1");
+      navigate(`${target.pathname}${target.search}`, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login gagal.");
     } finally {

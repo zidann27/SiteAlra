@@ -4,10 +4,11 @@ import { fetchSessionUser, isAuthenticated } from "../../lib/auth";
 
 export default function ProtectedRoute() {
   const location = useLocation();
-  const [checking, setChecking] = useState(true);
   const [authed, setAuthed] = useState(isAuthenticated());
+  const [checking, setChecking] = useState(() => !isAuthenticated());
 
   useEffect(() => {
+    setChecking(!isAuthenticated());
     // Always sync with backend cookie session.
     // This prevents stale localStorage (e.g., after switching accounts)
     // and avoids cross-account data leaking in UI (chat, settings, etc).
@@ -20,7 +21,7 @@ export default function ProtectedRoute() {
       });
   }, [location.pathname]);
 
-  if (checking) {
+  if (checking && !authed) {
     return null;
   }
 

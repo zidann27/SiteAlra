@@ -61,6 +61,7 @@ function buildSystemInstruction(ctx?: ChatContext): string {
     "SiteAlra adalah platform untuk membantu UMKM membuat website dengan bantuan AI, tanpa perlu coding.",
     "Soroti manfaat utama: AI Precision (konten sesuai profil bisnis), Modern Design (desain modern untuk konversi), Cloud Secure (keamanan data di cloud).",
     "Jika ditanya biaya, jelaskan bahwa biaya tergantung paket/fitur dan tawarkan untuk cek paket atau tanya kebutuhan pengguna.",
+    "Jika history menyebut nama bisnis lama, abaikan. Selalu gunakan nama bisnis terbaru dari konteks.",
   ];
 
   if (businessName) lines.push(`Nama bisnis: ${businessName}`);

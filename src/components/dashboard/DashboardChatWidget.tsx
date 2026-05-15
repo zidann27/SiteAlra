@@ -1,14 +1,22 @@
-import { useEffect, useRef, useState } from "react";
-import { Bot, Send, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Send, X, Plus } from "lucide-react";
 import {
   getDefaultProfile,
-  loadChatMessages,
+  loadChatThreads,
+  loadChatThreadMessages,
+  loadLegacyChatMessages,
+  loadLegacyChatThreads,
+  clearLegacyChatThreads,
   loadProfile,
   newId,
-  saveChatMessages,
+  saveChatThreadMessages,
+  createChatThread,
+  setActiveChatThreadId,
   type ChatMessage,
+  type ChatThread,
 } from "../../lib/dashboardStore";
 import { sendDashboardChat } from "../../lib/chat";
+import { fetchSessionUser, getSessionUser } from "../../lib/auth";
 
 function formatTime(ts: number): string {
   try {
@@ -21,16 +29,58 @@ function formatTime(ts: number): string {
   }
 }
 
+function deriveTitleFromMessages(messages: ChatMessage[]): string {
+  const userMsg = messages.find((m) => m.role === "user" && m.content.trim());
+  if (!userMsg) return "Chat";
+  const base = userMsg.content.replace(/\s+/g, " ").trim();
+  if (!base) return "Chat";
+  return base.length > 50 ? `${base.slice(0, 50)}...` : base;
+}
+
+function buildGreeting(name?: string): ChatMessage[] {
+  return [
+    {
+      id: newId(),
+      role: "assistant",
+      content: `Halo! Aku asisten bisnis untuk ${name || "UMKM kamu"}.\n\nChat baru sudah dimulai. Tanyakan apa saja!`,
+      createdAt: Date.now(),
+    },
+  ];
+}
+
+function filterVisibleThreads(threads: ChatThread[]): ChatThread[] {
+  return threads.filter((t) => {
+    if (typeof t.messageCount !== "number") return true;
+    if (t.messageCount > 1) return true;
+    return !(t.title || "").startsWith("Chat ");
+  });
+}
+
 export default function DashboardChatWidget() {
+  const [sessionUser, setSessionUser] = useState(() => getSessionUser());
+  const userKey = useMemo(
+    () => sessionUser?.id || sessionUser?.email || "anon",
+    [sessionUser?.id, sessionUser?.email],
+  );
+
   const [profile, setProfile] = useState(getDefaultProfile());
 
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [messagesLoaded, setMessagesLoaded] = useState(false);
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [activeThreadId, setActiveThreadIdState] = useState<string>("");
+  const [page, setPage] = useState(1);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [loadedUserKey, setLoadedUserKey] = useState(userKey);
+
+  const dirtyRef = useRef(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    fetchSessionUser().then((u) => setSessionUser(u));
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -50,42 +100,139 @@ export default function DashboardChatWidget() {
     let alive = true;
 
     (async () => {
-      const stored = await loadChatMessages();
+      const startNewRequested =
+        sessionStorage.getItem("sitealra_chat_start_new") === "1";
+      const startNew = startNewRequested && userKey !== "anon";
+      if (startNew) sessionStorage.removeItem("sitealra_chat_start_new");
+
+      setThreads([]);
+      setMessages([]);
+      setActiveThreadIdState("");
+
+      const existingThreadsRaw = await loadChatThreads();
       if (!alive) return;
-      setMessages(stored);
-      setMessagesLoaded(true);
+
+      let finalThreads = filterVisibleThreads(existingThreadsRaw);
+      let finalActiveId = "";
+
+      if (!finalThreads.length) {
+        const legacyThreads = loadLegacyChatThreads(userKey);
+        if (legacyThreads.length) {
+          const sortedLegacy = legacyThreads
+            .slice()
+            .sort(
+              (a, b) =>
+                (a.updatedAt ?? a.createdAt ?? 0) -
+                (b.updatedAt ?? b.createdAt ?? 0),
+            );
+          const migratedThreads: ChatThread[] = [];
+          for (const t of sortedLegacy) {
+            const migrated = await createChatThread({
+              title: t.title,
+              messages: t.messages,
+            });
+            migratedThreads.push(migrated);
+          }
+          finalThreads = filterVisibleThreads(migratedThreads);
+          finalActiveId = "";
+          clearLegacyChatThreads(userKey);
+        } else {
+          const legacy = loadLegacyChatMessages();
+          if (legacy.length) {
+            const migrated = await createChatThread({ messages: legacy });
+            finalThreads = filterVisibleThreads([migrated]);
+            finalActiveId = "";
+            localStorage.removeItem("sitealra_chat_messages");
+          }
+        }
+      }
+
+      if (!alive) return;
+
+      setThreads(finalThreads);
+      setActiveThreadIdState(finalActiveId);
+      if (finalActiveId) setActiveChatThreadId(userKey, finalActiveId);
+
+      const threadMessages = finalActiveId
+        ? await loadChatThreadMessages(finalActiveId)
+        : buildGreeting(profile.name || undefined);
+      if (!alive) return;
+      setMessages(threadMessages);
+      setLoadedUserKey(userKey);
+      setPage(1);
     })();
 
     return () => {
       alive = false;
     };
-  }, []);
+  }, [userKey, profile.name]);
 
   useEffect(() => {
-    if (!messagesLoaded) return;
-    if (messages.length > 0) return;
-
-    const initial: ChatMessage[] = [
-      {
-        id: newId(),
-        role: "assistant",
-        content: `Halo! Aku asisten bisnis untuk ${profile.name || "UMKM kamu"}.\n\nTanya apa aja soal ide promo, caption, pricing, SOP harian, atau rencana kerja.`,
-        createdAt: Date.now(),
-      },
-    ];
-
-    setMessages(initial);
-    void saveChatMessages(initial);
-  }, [messages.length, profile.name, messagesLoaded]);
-
-  useEffect(() => {
-    if (!messagesLoaded) return;
-    void saveChatMessages(messages);
+    if (loadedUserKey !== userKey) return;
+    if (!activeThreadId) return;
 
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages, messagesLoaded]);
+
+    if (!dirtyRef.current) return;
+
+    dirtyRef.current = false;
+    void (async () => {
+      await saveChatThreadMessages(activeThreadId, messages);
+      const nextTitle = deriveTitleFromMessages(messages);
+      setThreads((prev) =>
+        prev.map((t) =>
+          t.id === activeThreadId
+            ? {
+                ...t,
+                updatedAt: Date.now(),
+                messageCount: messages.length,
+                title:
+                  !t.title || t.title === "Chat" || t.title.startsWith("Chat ")
+                    ? nextTitle
+                    : t.title,
+              }
+            : t,
+        ),
+      );
+    })();
+  }, [messages, activeThreadId, userKey, loadedUserKey]);
+
+  const pageSize = 5;
+  const sortedThreads = useMemo(
+    () => threads.slice().sort((a, b) => b.updatedAt - a.updatedAt),
+    [threads],
+  );
+  const totalPages = Math.max(1, Math.ceil(sortedThreads.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageThreads = sortedThreads.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+  }, [page, currentPage]);
+
+  const setActiveThread = async (threadId: string) => {
+    if (!threadId) {
+      setActiveThreadIdState("");
+      setActiveChatThreadId(userKey, "");
+      setMessages(buildGreeting(profile.name || undefined));
+      return;
+    }
+    setActiveThreadIdState(threadId);
+    setActiveChatThreadId(userKey, threadId);
+    const threadMessages = await loadChatThreadMessages(threadId);
+    setMessages(threadMessages);
+  };
+
+  const onNewChat = () => {
+    setActiveThreadIdState("");
+    setActiveChatThreadId(userKey, "");
+    setMessages(buildGreeting(profile.name || undefined));
+  };
 
   const sendMessage = (text: string) => {
     const trimmed = text.trim();
@@ -102,11 +249,25 @@ export default function DashboardChatWidget() {
     };
 
     const history = messages
-      .filter((m) => m.role === "user" || m.role === "assistant")
+      .filter((m) => m.role === "user")
       .slice(-12)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    setMessages((prev) => [...prev, userMsg]);
+    if (!activeThreadId) {
+      const initial = buildGreeting(profile.name || undefined);
+      void (async () => {
+        const thread = await createChatThread({
+          messages: [...initial, userMsg],
+        });
+        setThreads((prev) => [thread, ...prev]);
+        setActiveThreadIdState(thread.id);
+        setActiveChatThreadId(userKey, thread.id);
+        setMessages([...initial, userMsg]);
+      })();
+    } else {
+      dirtyRef.current = true;
+      setMessages((prev) => [...prev, userMsg]);
+    }
 
     sendDashboardChat(trimmed, history)
       .then((reply) => {
@@ -117,6 +278,7 @@ export default function DashboardChatWidget() {
           createdAt: Date.now(),
         };
 
+        dirtyRef.current = true;
         setMessages((prev) => [...prev, assistantMsg]);
       })
       .catch((err) => {
@@ -148,6 +310,7 @@ export default function DashboardChatWidget() {
           createdAt: Date.now(),
         };
 
+        dirtyRef.current = true;
         setMessages((prev) => [...prev, assistantMsg]);
       })
       .finally(() => {
@@ -181,6 +344,15 @@ export default function DashboardChatWidget() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={onNewChat}
+                className="p-2 rounded-2xl hover:bg-gray-50 text-gray-600 transition-colors"
+                aria-label="New chat"
+                title="New chat"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                type="button"
                 onClick={() => setOpen(false)}
                 className="p-2 rounded-2xl hover:bg-gray-50 text-gray-600 transition-colors"
                 aria-label="Close chat"
@@ -192,6 +364,43 @@ export default function DashboardChatWidget() {
           </div>
 
           <div className="p-4 flex-1 min-h-0 flex flex-col">
+            <div className="mb-3">
+              <select
+                value={activeThreadId}
+                onChange={(e) => void setActiveThread(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                aria-label="Pilih chat"
+                disabled={pageThreads.length === 0}
+              >
+                <option value="">New chat</option>
+                {pageThreads.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+              {totalPages > 1 && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPage(p)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
+                          p === currentPage
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                        }`}
+                        aria-label={`Halaman ${p}`}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
             <div
               ref={listRef}
               className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-2 space-y-3"

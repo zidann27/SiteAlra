@@ -347,7 +347,7 @@ app.get("/auth/google/callback", async (req, res) => {
     });
     res.cookie(authCookieName, token, authCookieOptions);
     res.clearCookie(oauthStateCookieName, { path: "/" });
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${frontendUrl}/dashboard?startNew=1`);
   } catch (err) {
     console.error("Google OAuth error:", err);
     return res.status(500).send("Google login failed.");
@@ -446,7 +446,7 @@ app.get("/auth/facebook/callback", async (req, res) => {
     });
     res.cookie(authCookieName, token, authCookieOptions);
     res.clearCookie(facebookStateCookieName, { path: "/" });
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${frontendUrl}/dashboard?startNew=1`);
   } catch (err) {
     console.error("Facebook OAuth error:", err);
     return res.status(500).send("Facebook login failed.");
@@ -594,8 +594,17 @@ app.get("/api/owner/chat", requireAuth, async (req, res) => {
   const user = (req as AuthedRequest).user;
   const limit = Math.min(Number(req.query.limit || 100), 200);
 
-  const messages = await prisma.userChatMessage.findMany({
+  const latestThread = await prisma.userChatThread.findFirst({
     where: { userId: user.id },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  if (!latestThread) {
+    return res.json({ success: true, data: [] });
+  }
+
+  const messages = await prisma.userChatMessage.findMany({
+    where: { userId: user.id, threadId: latestThread.id },
     orderBy: { createdAt: "asc" },
     take: limit,
   });
@@ -632,6 +641,21 @@ app.put("/api/owner/chat", requireAuth, async (req, res) => {
     }
   }
 
+  let thread = await prisma.userChatThread.findFirst({
+    where: { userId: user.id },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  if (!thread) {
+    const title = deriveThreadTitle(undefined, messages);
+    thread = await prisma.userChatThread.create({
+      data: {
+        userId: user.id,
+        title,
+      },
+    });
+  }
+
   const createData = messages
     .filter(
       (msg): msg is {
@@ -644,18 +668,267 @@ app.put("/api/owner/chat", requireAuth, async (req, res) => {
     .map((msg) => ({
       id: msg.id,
       userId: user.id,
+      threadId: thread.id,
       role: msg.role,
       content: msg.content,
       createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date(),
     }));
 
   await prisma.$transaction([
-    prisma.userChatMessage.deleteMany({ where: { userId: user.id } }),
+    prisma.userChatMessage.deleteMany({
+      where: { userId: user.id, threadId: thread.id },
+    }),
     ...(createData.length
       ? [prisma.userChatMessage.createMany({ data: createData })]
       : []),
+    prisma.userChatThread.update({
+      where: { id: thread.id },
+      data: {
+        updatedAt: new Date(),
+        title: maybeUpdateThreadTitle(thread.title, messages),
+      },
+    }),
   ]);
 
+  return res.json({ success: true });
+});
+
+function defaultChatTitle(ts: number = Date.now()): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `Chat ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function sanitizeTitle(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function deriveThreadTitle(
+  inputTitle: string | undefined,
+  messages: Array<{ role?: string; content?: string }>,
+): string {
+  const trimmed = (inputTitle || "").trim();
+  if (trimmed) return trimmed;
+
+  const userMsg = messages.find(
+    (m) => m?.role === "user" && typeof m.content === "string" && m.content.trim(),
+  );
+  const base = sanitizeTitle(String(userMsg?.content || ""));
+  if (!base) return defaultChatTitle();
+  return base.length > 50 ? `${base.slice(0, 50)}…` : base;
+}
+
+function maybeUpdateThreadTitle(
+  currentTitle: string,
+  messages: Array<{ role?: string; content?: string }>,
+): string {
+  if (!currentTitle || currentTitle === "Chat" || currentTitle.startsWith("Chat ")) {
+    return deriveThreadTitle(undefined, messages);
+  }
+  return currentTitle;
+}
+
+app.get("/api/owner/chat/threads", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+
+  const threads = await prisma.userChatThread.findMany({
+    where: { userId: user.id },
+    orderBy: { updatedAt: "desc" },
+    include: { _count: { select: { messages: true } } },
+  });
+
+  return res.json({
+    success: true,
+    data: threads.map((t) => ({
+      id: t.id,
+      title: t.title,
+      createdAt: t.createdAt.getTime(),
+      updatedAt: t.updatedAt.getTime(),
+      messageCount: t._count.messages,
+    })),
+  });
+});
+
+app.post("/api/owner/chat/threads", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const body = req.body as {
+    title?: string;
+    messages?: Array<{
+      id?: string;
+      role?: string;
+      content?: string;
+      createdAt?: number;
+    }>;
+  };
+
+  const title = body.title?.trim();
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+
+  for (const msg of messages) {
+    if (!msg.role || !msg.content) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Pesan chat tidak valid." });
+    }
+  }
+
+  const thread = await prisma.userChatThread.create({
+    data: {
+      userId: user.id,
+      title: deriveThreadTitle(title, messages),
+    },
+  });
+
+  const createData = messages
+    .filter(
+      (msg): msg is {
+        id?: string;
+        role: string;
+        content: string;
+        createdAt?: number;
+      } => Boolean(msg.role && msg.content),
+    )
+    .map((msg) => ({
+      id: msg.id,
+      userId: user.id,
+      threadId: thread.id,
+      role: msg.role,
+      content: msg.content,
+      createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+    }));
+
+  if (createData.length) {
+    await prisma.userChatMessage.createMany({ data: createData });
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      id: thread.id,
+      title: thread.title,
+      createdAt: thread.createdAt.getTime(),
+      updatedAt: thread.updatedAt.getTime(),
+      messageCount: createData.length,
+    },
+  });
+});
+
+app.get("/api/owner/chat/threads/:threadId", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const threadId = String(req.params.threadId || "").trim();
+  const limit = Math.min(Number(req.query.limit || 200), 500);
+
+  if (!threadId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Thread tidak valid." });
+  }
+
+  const thread = await prisma.userChatThread.findFirst({
+    where: { id: threadId, userId: user.id },
+  });
+
+  if (!thread) {
+    return res
+      .status(404)
+      .json({ success: false, error: "Thread tidak ditemukan." });
+  }
+
+  const messages = await prisma.userChatMessage.findMany({
+    where: { userId: user.id, threadId },
+    orderBy: { createdAt: "asc" },
+    take: limit,
+  });
+
+  return res.json({
+    success: true,
+    data: messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      createdAt: msg.createdAt.getTime(),
+    })),
+  });
+});
+
+app.put("/api/owner/chat/threads/:threadId", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  const threadId = String(req.params.threadId || "").trim();
+  const body = req.body as {
+    messages?: Array<{
+      id?: string;
+      role?: string;
+      content?: string;
+      createdAt?: number;
+    }>;
+  };
+
+  if (!threadId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Thread tidak valid." });
+  }
+
+  const thread = await prisma.userChatThread.findFirst({
+    where: { id: threadId, userId: user.id },
+  });
+
+  if (!thread) {
+    return res
+      .status(404)
+      .json({ success: false, error: "Thread tidak ditemukan." });
+  }
+
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+
+  for (const msg of messages) {
+    if (!msg.role || !msg.content) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Pesan chat tidak valid." });
+    }
+  }
+
+  const createData = messages
+    .filter(
+      (msg): msg is {
+        id?: string;
+        role: string;
+        content: string;
+        createdAt?: number;
+      } => Boolean(msg.role && msg.content),
+    )
+    .map((msg) => ({
+      id: msg.id,
+      userId: user.id,
+      threadId,
+      role: msg.role,
+      content: msg.content,
+      createdAt: msg.createdAt ? new Date(msg.createdAt) : new Date(),
+    }));
+
+  await prisma.$transaction([
+    prisma.userChatMessage.deleteMany({
+      where: { userId: user.id, threadId },
+    }),
+    ...(createData.length
+      ? [prisma.userChatMessage.createMany({ data: createData })]
+      : []),
+    prisma.userChatThread.update({
+      where: { id: threadId },
+      data: {
+        updatedAt: new Date(),
+        title: maybeUpdateThreadTitle(thread.title, messages),
+      },
+    }),
+  ]);
+
+  return res.json({ success: true });
+});
+
+app.delete("/api/owner/chat/threads", requireAuth, async (req, res) => {
+  const user = (req as AuthedRequest).user;
+  await prisma.userChatThread.deleteMany({ where: { userId: user.id } });
   return res.json({ success: true });
 });
 

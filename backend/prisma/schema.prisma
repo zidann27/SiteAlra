@@ -19,6 +19,7 @@ model User {
   sites        Site[]
   profile      UserProfile?
   products     UserProduct[]
+  chatThreads  UserChatThread[]
   chatMessages UserChatMessage[]
 
   @@index([provider])
@@ -70,16 +71,34 @@ model UserProduct {
   @@index([userId])
 }
 
+model UserChatThread {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String   @default("Chat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  UserChatMessage[]
+
+  @@index([userId])
+  @@index([updatedAt])
+}
+
 model UserChatMessage {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threadId  String
+  thread    UserChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   role      String
   content   String   @db.LongText
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([threadId])
   @@index([createdAt])
 }
 

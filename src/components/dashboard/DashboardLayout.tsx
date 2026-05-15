@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Sparkles,
@@ -13,7 +13,14 @@ import {
 import { getSessionUser, signOut } from "../../lib/auth";
 import DashboardChatWidget from "./DashboardChatWidget";
 
-const navItems = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+};
+
+const navItems: NavItem[] = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/dashboard/generator", label: "AI Generator", icon: Sparkles },
   { to: "/dashboard/products", label: "Produk", icon: Package },
@@ -24,6 +31,7 @@ const navItems = [
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = getSessionUser();
 
   const [collapsed, setCollapsed] = useState(() => {
@@ -41,6 +49,19 @@ export default function DashboardLayout() {
       // ignore
     }
   }, [collapsed]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("startNew") !== "1") return;
+
+    sessionStorage.setItem("sitealra_chat_start_new", "1");
+    params.delete("startNew");
+    const nextSearch = params.toString();
+    navigate(
+      { pathname: location.pathname, search: nextSearch ? `?${nextSearch}` : "" },
+      { replace: true },
+    );
+  }, [location.pathname, location.search, navigate]);
 
   const sidebarWidth = collapsed ? "md:w-24" : "md:w-64";
   const contentPadding = collapsed ? "md:pl-24" : "md:pl-64";
@@ -112,7 +133,7 @@ export default function DashboardLayout() {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    end={item.end as any}
+                    end={Boolean(item.end)}
                     title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       `group flex items-center rounded-xl text-sm font-semibold transition-colors ${

@@ -5,6 +5,9 @@ export type SessionUser = {
 };
 
 const SESSION_KEY = "sitealra_session_v1";
+const CHAT_ACTIVE_THREAD_KEY_PREFIX = "sitealra_chat_active_thread";
+const CHAT_THREADS_KEY_PREFIX = "sitealra_chat_threads";
+const CHAT_MESSAGES_KEY = "sitealra_chat_messages";
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
 
@@ -122,7 +125,12 @@ export function getFacebookAuthUrl(): string {
 }
 
 export async function signOut(): Promise<void> {
+  const session = getSessionUser();
+  const userKey = session?.id || session?.email || "anon";
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(`${CHAT_ACTIVE_THREAD_KEY_PREFIX}:${userKey}`);
+  localStorage.removeItem(`${CHAT_THREADS_KEY_PREFIX}:${userKey}`);
+  localStorage.removeItem(CHAT_MESSAGES_KEY);
   await fetch(apiUrl("/auth/logout"), {
     method: "POST",
     credentials: "include",
