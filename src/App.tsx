@@ -7,6 +7,8 @@ import OwnerHomePage from "./pages/OwnerHomePage";
 import OwnerProductsPage from "./pages/OwnerProductsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/dashboard/ProtectedRoute";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import OverviewPage from "./pages/dashboard/OverviewPage";
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>

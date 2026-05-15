@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import nodemailer from "nodemailer";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db.js";
 import { generateSlug } from "./slug.js";
@@ -28,6 +29,12 @@ const facebookClientSecret = process.env.FACEBOOK_CLIENT_SECRET || "";
 const facebookRedirectUri =
   process.env.FACEBOOK_REDIRECT_URI ||
   "http://localhost:4000/auth/facebook/callback";
+const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+const smtpPort = Number(process.env.SMTP_PORT || 465);
+const smtpUser = process.env.SMTP_USER || "";
+const smtpPass = process.env.SMTP_PASS || "";
+const smtpFrom = process.env.SMTP_FROM || "";
+const resetTokenMinutes = Number(process.env.RESET_TOKEN_MINUTES || 30);
 
 const googleClient = new OAuth2Client(
   googleClientId,
@@ -52,6 +59,191 @@ const authCookieOptions = {
 function signAuthToken(user: AuthUser): string {
   return jwt.sign({ sub: user.id, email: user.email }, jwtSecret, {
     expiresIn: "7d",
+  });
+}
+
+function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+async function sendResetEmail(input: {
+  email: string;
+  resetUrl: string;
+}): Promise<void> {
+  if (!smtpUser || !smtpPass || !smtpFrom) {
+    throw new Error("SMTP not configured");
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: { user: smtpUser, pass: smtpPass },
+  });
+
+  const textBody = `Halo,
+
+Kami menerima permintaan untuk melakukan reset password pada akun Anda.
+
+Untuk melanjutkan proses reset password, silakan klik tautan di bawah ini:
+${input.resetUrl}
+
+Tautan ini bersifat sementara demi menjaga keamanan akun Anda. Jika Anda tidak merasa melakukan permintaan reset password, abaikan email ini dan jangan bagikan tautan tersebut kepada siapa pun.
+
+Terima kasih,
+Tim SiteAlra`;
+const htmlBody = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+
+<body style="
+  margin:0;
+  padding:0;
+  background:#f5f7fb;
+  font-family:Arial,sans-serif;
+">
+
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="
+          max-width:520px;
+          background:#ffffff;
+          border-radius:14px;
+          overflow:hidden;
+          border:1px solid #e5e7eb;
+        ">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 40px 16px;">
+              <h1 style="
+                margin:0;
+                font-size:24px;
+                color:#111827;
+                font-weight:700;
+              ">
+                SiteAlra
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+
+              <p style="
+                margin:0 0 18px;
+                color:#111827;
+                font-size:15px;
+                line-height:1.7;
+              ">
+                Halo,
+              </p>
+
+              <p style="
+                margin:0 0 24px;
+                color:#4b5563;
+                font-size:15px;
+                line-height:1.7;
+              ">
+                Kami menerima permintaan untuk mereset password akun Anda.
+                Klik tombol di bawah untuk membuat password baru.
+              </p>
+
+              <!-- Button -->
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="
+                    background:#111827;
+                    border-radius:10px;
+                  ">
+                    <a href="${input.resetUrl}" style="
+                      display:inline-block;
+                      padding:14px 28px;
+                      color:#ffffff;
+                      text-decoration:none;
+                      font-size:14px;
+                      font-weight:600;
+                    ">
+                      Reset Password
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="
+                margin:28px 0 10px;
+                color:#6b7280;
+                font-size:13px;
+                line-height:1.6;
+              ">
+                Jika tombol tidak berfungsi, salin tautan berikut:
+              </p>
+
+              <p style="
+                margin:0 0 28px;
+                word-break:break-all;
+              ">
+                <a href="${input.resetUrl}" style="
+                  color:#2563eb;
+                  font-size:13px;
+                  text-decoration:none;
+                ">
+                  ${input.resetUrl}
+                </a>
+              </p>
+
+              <div style="
+                height:1px;
+                background:#e5e7eb;
+                margin:0 0 24px;
+              "></div>
+
+              <p style="
+                margin:0;
+                color:#9ca3af;
+                font-size:12px;
+                line-height:1.7;
+              ">
+                Tautan ini bersifat sementara demi keamanan akun Anda.
+                Jika Anda tidak merasa melakukan permintaan ini,
+                abaikan email ini.
+              </p>
+
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Footer -->
+        <p style="
+          margin:18px 0 0;
+          color:#9ca3af;
+          font-size:12px;
+        ">
+          © 2026 SiteAlra. All rights reserved.
+        </p>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+`;
+
+  await transporter.sendMail({
+    from: smtpFrom,
+    to: input.email,
+    subject: "Reset Password SiteAlra",
+    text: textBody,
+    html: htmlBody,
   });
 }
 
@@ -222,6 +414,91 @@ app.post("/auth/login", async (req, res) => {
     success: true,
     data: { id: user.id, email: user.email, name: user.name ?? null },
   });
+});
+
+app.post("/auth/password/forgot", async (req, res) => {
+  const body = req.body as { email?: string };
+  const email = body.email?.trim().toLowerCase() || "";
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Email wajib diisi." });
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user || !user.passwordHash) {
+    return res.json({ success: true });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + resetTokenMinutes * 60 * 1000);
+
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+  await prisma.passwordResetToken.create({
+    data: { userId: user.id, tokenHash, expiresAt },
+  });
+
+  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(
+    token,
+  )}`;
+
+  try {
+    await sendResetEmail({ email, resetUrl });
+  } catch (err) {
+    console.error("Reset email error:", err);
+    return res
+      .status(500)
+      .json({ success: false, error: "Gagal mengirim email reset." });
+  }
+
+  return res.json({ success: true });
+});
+
+app.post("/auth/password/reset", async (req, res) => {
+  const body = req.body as { token?: string; password?: string };
+  const token = String(body.token || "").trim();
+  const password = body.password || "";
+
+  if (!token || !password) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Token dan password wajib diisi." });
+  }
+
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Password minimal 6 karakter." });
+  }
+
+  const tokenHash = hashToken(token);
+  const reset = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+  });
+
+  if (!reset || reset.expiresAt.getTime() < Date.now()) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Token reset tidak valid atau kadaluarsa." });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: reset.userId } });
+  if (!user) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Akun tidak ditemukan." });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
+    prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+  ]);
+
+  return res.json({ success: true });
 });
 
 app.post("/auth/logout", (_req, res) => {

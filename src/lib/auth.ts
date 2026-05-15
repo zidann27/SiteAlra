@@ -136,3 +136,40 @@ export async function signOut(): Promise<void> {
     credentials: "include",
   });
 }
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await fetch(apiUrl("/auth/password/forgot"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+
+  const result = await parseJson<{ success?: boolean; error?: string }>(
+    response,
+  );
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || "Gagal mengirim email reset.");
+  }
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  const response = await fetch(apiUrl("/auth/password/reset"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token, password }),
+  });
+
+  const result = await parseJson<{ success?: boolean; error?: string }>(
+    response,
+  );
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || "Reset password gagal.");
+  }
+}

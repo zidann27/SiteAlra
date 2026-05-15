@@ -21,9 +21,23 @@ model User {
   products     UserProduct[]
   chatThreads  UserChatThread[]
   chatMessages UserChatMessage[]
+  passwordResets PasswordResetToken[]
 
   @@index([provider])
   @@unique([provider, providerId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model UserProfile {

@@ -1,2 +1,3 @@
--- AlterTable
-ALTER TABLE `userchatthread` ALTER COLUMN `updatedAt` DROP DEFAULT;
+-- This migration intentionally left empty.
+-- The ALTER for userchatthread was moved to 20260516090000_add_chat_threads
+-- because UserChatThread is created there (cannot alter a table before it exists).

@@ -39,7 +39,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs">© 2024 SiteAlra. Hak cipta dilindungi.</p>
+          <p className="text-xs">© 2026 SiteAlra.  All rights reserved.</p>
           <p className="text-xs flex items-center gap-1">
             Dibuat dengan <Heart size={12} className="text-red-400" /> untuk UMKM Indonesia
           </p>
