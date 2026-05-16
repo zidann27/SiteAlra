@@ -56,7 +56,7 @@ export default function PreviewPage() {
     setDeployError("");
     try {
       const site = await deploySite(formData, aiContent);
-      const siteUrl = `${window.location.origin}/site/${site.slug}`;
+      const siteUrl = site.url || `${window.location.origin}/site/${site.slug}`;
       setDeployedUrl(siteUrl);
       setIsDeploying(false);
     } catch (err) {

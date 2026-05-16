@@ -44,6 +44,7 @@ export interface GeneratedSite {
   aiContent: AIContent;
   viewCount: number;
   createdAt: string;
+  url?: string;
 }
 
 export interface SiteProduct {

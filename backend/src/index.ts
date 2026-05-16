@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "./db.js";
-import { generateSlug } from "./slug.js";
+import { generateSlug, normalizeDomainSlug } from "./slug.js";
 import { generateWithOpenAI, type GenerateRequest } from "./ai.js";
 import { chatWithGeminiFlash, type ChatRequest } from "./gemini.js";
 
@@ -28,6 +28,19 @@ const googleClient = new OAuth2Client(
   googleClientSecret,
   googleRedirectUri,
 );
+
+function buildLocalSiteUrl(domainName?: string | null): string | null {
+  const slug = normalizeDomainSlug(domainName || "");
+  if (!slug) return null;
+  return `${frontendUrl.replace(/\/$/, "")}/site/${slug}`;
+}
+
+function buildSiteSlug(businessName: string, domainName?: string | null): string {
+  const domainSlug = normalizeDomainSlug(domainName || "");
+  if (domainSlug) return domainSlug;
+  const baseSlug = generateSlug(businessName);
+  return `${baseSlug}-${Date.now().toString(36)}`;
+}
 
 type AuthUser = { id: string; email: string; name: string | null };
 type AuthedRequest = express.Request & { user: AuthUser };
@@ -608,9 +621,11 @@ app.post("/api/sites", async (req, res) => {
       .json({ success: false, error: "Missing required fields" });
   }
 
-  const baseSlug = generateSlug(body.businessName);
-  const uniqueSlug = `${baseSlug}-${Date.now().toString(36)}`;
   const authUser = getAuthUser(req);
+  const authProfile = authUser
+    ? await prisma.userProfile.findUnique({ where: { userId: authUser.id } })
+    : null;
+  const uniqueSlug = buildSiteSlug(body.businessName, authProfile?.domainName);
 
   const createSite = (businessDescription: string) =>
     prisma.site.create({
@@ -626,7 +641,8 @@ app.post("/api/sites", async (req, res) => {
 
   try {
     const site = await createSite(body.businessDescription);
-    return res.json({ success: true, data: site });
+    const url = buildLocalSiteUrl(authProfile?.domainName) || undefined;
+    return res.json({ success: true, data: { ...site, url } });
   } catch (err: any) {
     // Prisma throws P2000 when a value is too long for the column.
     if (err?.code === "P2000") {
@@ -634,9 +650,10 @@ app.post("/api/sites", async (req, res) => {
 
       try {
         const site = await createSite(truncated);
+        const url = buildLocalSiteUrl(authProfile?.domainName) || undefined;
         return res.json({
           success: true,
-          data: site,
+          data: { ...site, url },
           warning: "businessDescription truncated to fit database column",
         });
       } catch {

@@ -146,7 +146,7 @@ export default function WebsitePreviewPage() {
 
     try {
       const site = await deploySite(deployFormData, content);
-      const siteUrl = `${window.location.origin}/site/${site.slug}`;
+      const siteUrl = site.url || `${window.location.origin}/site/${site.slug}`;
       setDeployedUrl(siteUrl);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
