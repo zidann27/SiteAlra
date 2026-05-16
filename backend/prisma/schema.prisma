@@ -25,6 +25,19 @@ model User {
   @@unique([provider, providerId])
 }
 
+model UserChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role      String
+  content   String   @db.LongText
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model UserProfile {
   id               String   @id @default(cuid())
   userId           String   @unique
@@ -70,23 +83,10 @@ model UserProduct {
   @@index([userId])
 }
 
-model UserChatMessage {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  role      String
-  content   String   @db.LongText
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([createdAt])
-}
-
 model Site {
   id                  String   @id @default(cuid())
   businessName        String
-  businessDescription String
+  businessDescription String   @db.LongText
   category            String   @default("umum")
   slug                String   @unique
   aiContent           Json

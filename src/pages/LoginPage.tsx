@@ -107,33 +107,37 @@ export default function LoginPage() {
       {/* =========================================
           RIGHT PANEL: THE LOGIN AREA (PUTIH + BLUR)
       ========================================= */}
-      <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 sm:p-16 min-h-[60vh] md:min-h-screen relative">
+      <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-4 sm:p-8 md:p-16 min-h-[60vh] md:min-h-screen relative">
         {/* Efek Blur halus di latar belakang */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
 
         <Link
           to="/"
-          className="absolute top-8 left-8 sm:left-16 inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
+          className="absolute top-4 left-4 sm:top-8 sm:left-8 md:left-16 z-50 inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 min-h-10 sm:min-h-auto text-xs sm:text-sm text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors"
         >
-          <ArrowLeft size={16} />
-          Kembali ke Beranda
+          <ArrowLeft
+            size={14}
+            className="sm:w-[16px] sm:h-[16px] flex-shrink-0"
+          />
+          <span className="hidden sm:inline">Kembali ke Beranda</span>
+          <span className="sm:hidden">Kembali</span>
         </Link>
 
-        <div className="w-full max-w-sm flex flex-col relative h-full justify-center z-10">
+        <div className="w-full max-w-sm flex flex-col relative h-full justify-center z-10 pt-12 sm:pt-0">
           {/* Logo (Hanya Tulisan) */}
-          <div className="mb-6">
-            <span className="text-2xl font-bold tracking-tighter text-zinc-950">
+          <div className="mb-4 sm:mb-6">
+            <span className="text-lg sm:text-2xl font-bold tracking-tighter text-zinc-950">
               SiteAlra.
             </span>
           </div>
 
           {/* Header Content */}
-          <div className="mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-zinc-900 mb-2 sm:mb-3">
               Welcome Back!
             </h2>
-            <p className="text-zinc-500 font-medium text-sm">
+            <p className="text-zinc-500 font-medium text-xs sm:text-sm">
               Masuk untuk mengelola website dan produk.
             </p>
           </div>
@@ -219,23 +223,27 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-4">
-            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-zinc-400 text-center">
+          <div className="mt-3 sm:mt-4">
+            <p className="mt-3 sm:mt-4 text-xs uppercase tracking-[0.3em] text-zinc-400 text-center">
               atau
             </p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-2 sm:mt-3 flex flex-row items-center justify-center gap-2 sm:gap-3">
               <button
                 type="button"
                 aria-label="Lanjutkan dengan Facebook"
-                className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
+                className="flex-1 sm:flex-none sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-xs sm:text-sm hover:border-blue-200 hover:text-blue-700"
               >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 sm:h-5 sm:w-5"
+                >
                   <path
                     fill="#1877F2"
                     d="M24 12.07C24 5.405 18.627 0 12 0S0 5.405 0 12.07c0 6.022 4.388 11.023 10.125 11.93v-8.44H7.078v-3.49h3.047V9.43c0-3.03 1.792-4.71 4.533-4.71 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.49 0-1.953.93-1.953 1.887v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.093 24 18.092 24 12.07z"
                   />
                 </svg>
-                Facebook
+                <span className="hidden sm:inline">Facebook</span>
               </button>
 
               <button
@@ -244,9 +252,13 @@ export default function LoginPage() {
                 onClick={() => {
                   window.location.href = getGoogleAuthUrl();
                 }}
-                className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
+                className="flex-1 sm:flex-none sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-xs sm:text-sm hover:border-blue-200 hover:text-blue-700"
               >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 sm:h-5 sm:w-5"
+                >
                   <path
                     fill="#EA4335"
                     d="M12 10.2v3.9h5.48c-.22 1.3-1.52 3.82-5.48 3.82-3.3 0-5.99-2.7-5.99-6.02 0-3.32 2.69-6.02 5.99-6.02 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 6.98 2.4 2.88 6.53 2.88 11.9c0 5.37 4.1 9.5 9.12 9.5 5.27 0 8.74-3.72 8.74-8.97 0-.6-.06-1.05-.14-1.5H12z"
@@ -264,13 +276,13 @@ export default function LoginPage() {
                     d="M20.6 12.07c0-.58-.06-1.05-.14-1.5H12v3.9h5.48c-.29 1.73-1.52 3.02-3.08 3.88l3.08 2.5c1.8-1.67 2.82-4.12 2.82-7.78z"
                   />
                 </svg>
-                Google
+                <span className="hidden sm:inline">Google</span>
               </button>
             </div>
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-zinc-500">
+          <div className="mt-4 sm:mt-6 text-center">
+            <p className="text-xs sm:text-sm text-zinc-500">
               Belum punya akun?{" "}
               <Link
                 to="/register"

@@ -35,9 +35,24 @@ export type ChatMessage = {
   createdAt: number;
 };
 
+export type ChatThread = {
+  id: string;
+  ownerKey?: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+};
+
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
 
+const CHAT_THREADS_KEY_PREFIX = "sitealra_chat_threads_v1:";
+const CHAT_ACTIVE_THREAD_KEY_PREFIX = "sitealra_chat_active_thread_v1:";
+
+function userKeyed(prefix: string, userKey: string): string {
+  return `${prefix}${userKey || "anon"}`;
+}
 
 function apiUrl(path: string): string {
   if (!API_BASE_URL) return path;
@@ -277,25 +292,6 @@ export function loadChatThreads(userKey: string): ChatThread[] {
       return parsed
         .map((t) => ({ ...t, ownerKey: t.ownerKey || userKey }))
         .filter((t) => (t.ownerKey || userKey) === userKey);
-    }
-
-    // Migrate legacy single-thread storage for anonymous users.
-    if ((userKey || "anon") === "anon") {
-      const legacy = loadChatMessages();
-      if (legacy.length) {
-        const now = Date.now();
-        const migrated: ChatThread = {
-          id: newId(),
-          ownerKey: "anon",
-          title: defaultThreadTitle(now),
-          createdAt: now,
-          updatedAt: now,
-          messages: legacy,
-        };
-        saveChatThreads("anon", [migrated]);
-        localStorage.removeItem(CHAT_MESSAGES_KEY);
-        return [migrated];
-      }
     }
 
     return [];

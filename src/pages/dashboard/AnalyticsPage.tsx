@@ -14,16 +14,20 @@ function StatCard({
   Icon: React.ComponentType<{ size?: string | number; className?: string }>;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-6 transition-colors">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider transition-colors">
             {title}
           </p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{value}</p>
-          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2 transition-colors">
+            {value}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 transition-colors">
+            {subtitle}
+          </p>
         </div>
-        <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+        <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center transition-colors">
           <Icon size={18} />
         </div>
       </div>
@@ -76,10 +80,12 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white transition-colors">
           Analytics
         </h1>
-        <p className="text-gray-500 mt-2">Statistik ringkas untuk dashboard.</p>
+        <p className="text-gray-500 dark:text-slate-400 mt-2 transition-colors">
+          Statistik ringkas untuk dashboard.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -109,11 +115,15 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="mt-6 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-6 transition-colors">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="font-bold text-gray-900">Grafik Visitor</div>
-            <div className="text-sm text-gray-500 mt-1">7 hari terakhir</div>
+            <div className="font-bold text-gray-900 dark:text-white transition-colors">
+              Grafik Visitor
+            </div>
+            <div className="text-sm text-gray-500 dark:text-slate-400 mt-1 transition-colors">
+              7 hari terakhir
+            </div>
           </div>
         </div>
 
@@ -127,7 +137,9 @@ export default function AnalyticsPage() {
                 }}
                 title={`${c.value}`}
               />
-              <div className="text-xs text-gray-400">{c.label}</div>
+              <div className="text-xs text-gray-400 dark:text-slate-500 transition-colors">
+                {c.label}
+              </div>
             </div>
           ))}
         </div>

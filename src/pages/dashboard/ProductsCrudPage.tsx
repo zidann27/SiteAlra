@@ -172,11 +172,11 @@ export default function ProductsCrudPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            CRUD Produk
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            Product Management
           </h1>
-          <p className="text-gray-500 mt-2">
-            Kelola produk dalam bentuk grid card.
+          <p className="text-gray-500 dark:text-slate-400 mt-2">
+            Kelola produk bisnis dengan mudah.
           </p>
         </div>
 
@@ -190,12 +190,14 @@ export default function ProductsCrudPage() {
       </div>
 
       {products.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+        <div className="bg-white dark:bg-slate-900 transition-colors rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-10 text-center">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 transition-colors text-blue-600 flex items-center justify-center mx-auto mb-3">
             <ImageIcon size={20} />
           </div>
-          <p className="text-gray-700 font-semibold">Belum ada produk.</p>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-700 dark:text-gray-200 font-semibold">
+            Belum ada produk.
+          </p>
+          <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">
             Klik “Tambah Produk” untuk mulai.
           </p>
         </div>
@@ -204,9 +206,9 @@ export default function ProductsCrudPage() {
           {products.map((p) => (
             <div
               key={p.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+              className="bg-white dark:bg-slate-900 transition-colors rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden"
             >
-              <div className="h-32 bg-gray-50 flex items-center justify-center overflow-hidden p-4">
+              <div className="h-32 bg-gray-50 dark:bg-slate-800 transition-colors flex items-center justify-center overflow-hidden p-4">
                 {p.imageDataUrl ? (
                   <img
                     src={p.imageDataUrl}
@@ -214,7 +216,7 @@ export default function ProductsCrudPage() {
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <div className="text-center text-gray-400">
+                  <div className="text-center text-gray-400 dark:text-slate-500">
                     <ImageIcon size={26} className="mx-auto mb-2" />
                     <div className="text-xs">Tidak ada gambar</div>
                   </div>
@@ -224,7 +226,7 @@ export default function ProductsCrudPage() {
               <div className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="font-bold text-gray-900 truncate">
+                    <div className="font-bold text-gray-900 dark:text-white truncate">
                       {p.name}
                     </div>
                     <div className="text-sm font-semibold text-blue-600 mt-1">
@@ -233,7 +235,7 @@ export default function ProductsCrudPage() {
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-500 mt-3 line-clamp-2">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-3 line-clamp-2">
                   {p.description || "Tanpa deskripsi."}
                 </p>
 
@@ -241,14 +243,14 @@ export default function ProductsCrudPage() {
                   <button
                     type="button"
                     onClick={() => openEdit(p)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 dark:bg-slate-800 rounded-xl text-xs font-semibold transition-colors"
                   >
                     <Pencil size={14} /> Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => onDelete(p.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-semibold transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-500/10 transition-colors hover:bg-red-100 dark:hover:bg-red-500/20 text-red-700 rounded-xl text-xs font-semibold"
                   >
                     <Trash2 size={14} /> Delete
                   </button>
@@ -266,20 +268,20 @@ export default function ProductsCrudPage() {
             onClick={closeModal}
           />
           <div className="min-h-full flex items-start sm:items-center justify-center px-4 py-8">
-            <div className="relative w-full max-w-lg max-h-[calc(100vh-4rem)] bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden flex flex-col">
-              <div className="px-7 py-5 border-b border-gray-100 flex items-center justify-between">
+            <div className="relative w-full max-w-lg max-h-[calc(100vh-4rem)] bg-white dark:bg-slate-900 transition-colors rounded-2xl border border-gray-100 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col">
+              <div className="px-7 py-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-gray-900">
+                  <div className="font-bold text-gray-900 dark:text-white">
                     {isEditing ? "Edit Produk" : "Tambah Produk"}
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                     Isi nama, harga, deskripsi, dan upload gambar.
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="p-2 rounded-xl hover:bg-gray-100 text-gray-500"
+                  className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400"
                 >
                   <X size={18} />
                 </button>
@@ -290,7 +292,7 @@ export default function ProductsCrudPage() {
                 className="p-7 space-y-5 overflow-y-auto"
               >
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                     Nama produk <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -299,13 +301,13 @@ export default function ProductsCrudPage() {
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, name: e.target.value }))
                     }
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 dark:text-gray-100 dark:bg-slate-800 dark:placeholder-gray-500 text-sm"
                     maxLength={120}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                     Harga <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -314,14 +316,14 @@ export default function ProductsCrudPage() {
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, price: e.target.value }))
                     }
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 text-sm"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 dark:text-gray-100 dark:bg-slate-800 dark:placeholder-gray-500 text-sm"
                     min={0}
                     step={500}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                     Deskripsi
                   </label>
                   <textarea
@@ -330,17 +332,17 @@ export default function ProductsCrudPage() {
                       setDraft((d) => ({ ...d, description: e.target.value }))
                     }
                     rows={4}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 text-sm resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all text-gray-900 dark:text-gray-100 dark:bg-slate-800 dark:placeholder-gray-500 text-sm resize-none"
                     maxLength={600}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                     Upload gambar
                   </label>
                   <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-xl bg-gray-50 dark:bg-slate-800 transition-colors border border-gray-200 dark:border-slate-700 overflow-hidden flex items-center justify-center">
                       {draft.imageDataUrl ? (
                         <img
                           src={draft.imageDataUrl}
@@ -348,7 +350,10 @@ export default function ProductsCrudPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <ImageIcon size={20} className="text-gray-400" />
+                        <ImageIcon
+                          size={20}
+                          className="text-gray-400 dark:text-slate-500"
+                        />
                       )}
                     </div>
                     <input
@@ -357,13 +362,13 @@ export default function ProductsCrudPage() {
                       onChange={(e) =>
                         onImageChange(e.target.files?.[0] ?? null, e.target)
                       }
-                      className="text-sm text-gray-600"
+                      className="text-sm text-gray-600 dark:text-gray-400"
                     />
                   </div>
                 </div>
 
                 {error && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+                  <div className="p-4 bg-red-50 dark:bg-red-500/10 transition-colors border border-red-200 rounded-xl text-sm text-red-600">
                     {error}
                   </div>
                 )}

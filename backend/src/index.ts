@@ -612,18 +612,46 @@ app.post("/api/sites", async (req, res) => {
   const uniqueSlug = `${baseSlug}-${Date.now().toString(36)}`;
   const authUser = getAuthUser(req);
 
-  const site = await prisma.site.create({
-    data: {
-      businessName: body.businessName,
-      businessDescription: body.businessDescription,
-      category: body.category,
-      slug: uniqueSlug,
-      aiContent: body.aiContent as any,
-      ownerId: authUser?.id || null,
-    },
-  });
+  const createSite = (businessDescription: string) =>
+    prisma.site.create({
+      data: {
+        businessName: body.businessName,
+        businessDescription,
+        category: body.category,
+        slug: uniqueSlug,
+        aiContent: body.aiContent as any,
+        ownerId: authUser?.id || null,
+      },
+    });
 
-  return res.json({ success: true, data: site });
+  try {
+    const site = await createSite(body.businessDescription);
+    return res.json({ success: true, data: site });
+  } catch (err: any) {
+    // Prisma throws P2000 when a value is too long for the column.
+    if (err?.code === "P2000") {
+      const truncated = body.businessDescription.slice(0, 180);
+
+      try {
+        const site = await createSite(truncated);
+        return res.json({
+          success: true,
+          data: site,
+          warning: "businessDescription truncated to fit database column",
+        });
+      } catch {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Deskripsi bisnis terlalu panjang. Silakan ringkas deskripsi lalu coba deploy lagi.",
+        });
+      }
+    }
+
+    return res
+      .status(500)
+      .json({ success: false, error: "Gagal deploy website." });
+  }
 });
 
 app.get("/api/sites", async (req, res) => {

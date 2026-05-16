@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import PreviewPage from "./pages/PreviewPage";
+import WebsitePreviewMobilePage from "./pages/dashboard/WebsitePreviewMobilePage";
 import SiteViewPage from "./pages/SiteViewPage";
 import OwnerHomePage from "./pages/OwnerHomePage";
 import OwnerProductsPage from "./pages/OwnerProductsPage";
@@ -13,10 +15,25 @@ import OverviewPage from "./pages/dashboard/OverviewPage";
 import AIGeneratorPage from "./pages/dashboard/AIGeneratorPage";
 import ProductsCrudPage from "./pages/dashboard/ProductsCrudPage";
 import WebsitePreviewPage from "./pages/dashboard/WebsitePreviewPage";
-import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 
 export default function App() {
+  // Initialize theme on app load
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    const initialTheme =
+      savedTheme === "dark" || savedTheme === "light"
+        ? (savedTheme as "light" | "dark")
+        : prefersDark
+          ? "dark"
+          : "light";
+
+    document.documentElement.classList.toggle("dark", initialTheme === "dark");
+    document.documentElement.style.colorScheme = initialTheme;
+  }, []);
   return (
     <BrowserRouter>
       <Routes>
@@ -25,12 +42,15 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         <Route element={<ProtectedRoute />}>
+          <Route
+            path="/dashboard/preview/mobile"
+            element={<WebsitePreviewMobilePage />}
+          />
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<OverviewPage />} />
             <Route path="/dashboard/generator" element={<AIGeneratorPage />} />
             <Route path="/dashboard/products" element={<ProductsCrudPage />} />
             <Route path="/dashboard/preview" element={<WebsitePreviewPage />} />
-            <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
             <Route path="/dashboard/settings" element={<SettingsPage />} />
           </Route>
         </Route>

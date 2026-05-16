@@ -14,6 +14,23 @@ async function parseJson<T>(response: Response): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+async function readErrorMessage(response: Response): Promise<string> {
+  const text = await response.text().catch(() => "");
+  if (!text) return response.statusText;
+
+  try {
+    const parsed = JSON.parse(text) as { error?: string; message?: string };
+    if (typeof parsed?.error === "string" && parsed.error.trim())
+      return parsed.error;
+    if (typeof parsed?.message === "string" && parsed.message.trim())
+      return parsed.message;
+  } catch {
+    // ignore JSON parse errors
+  }
+
+  return text;
+}
+
 export async function generateWebsiteContent(
   formData: GenerateFormData,
 ): Promise<AIContent> {
@@ -31,7 +48,7 @@ export async function generateWebsiteContent(
   });
 
   if (!response.ok) {
-    throw new Error(`Generation failed: ${response.statusText}`);
+    throw new Error(await readErrorMessage(response));
   }
 
   const result = await parseJson<{
@@ -73,7 +90,7 @@ export async function deploySite(
   });
 
   if (!response.ok) {
-    throw new Error(`Deploy failed: ${response.statusText}`);
+    throw new Error(await readErrorMessage(response));
   }
 
   const result = await parseJson<{
