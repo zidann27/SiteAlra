@@ -8,13 +8,38 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import nodemailer from "nodemailer";
 import { Prisma } from "@prisma/client";
-import { prisma } from "./db.js";
+import { prisma as prismaClient } from "./db.js";
 import { generateSlug, normalizeDomainSlug } from "./slug.js";
 import { generateWithOpenAI, type GenerateRequest } from "./ai.js";
 import { chatWithGeminiFlash, type ChatRequest } from "./gemini.js";
 
+const prisma: any = prismaClient;
+
 const app = express();
 
+// Compatibility: handle camelCase vs lowercase Prisma model delegates
+// Some generated clients expose `userprofile` instead of `userProfile`
+
+// Compatibility shim: some Prisma clients expose model properties in lowercase
+// e.g. `prisma.userprofile` instead of `prisma.userProfile`. Add camelCase
+// aliases when missing so existing code can use `prisma.userProfile` safely.
+try {
+  const anyPrisma = prisma as any;
+  if (!anyPrisma.userProfile && anyPrisma.userprofile) {
+    anyPrisma.userProfile = anyPrisma.userprofile;
+  }
+  if (!anyPrisma.userProduct && anyPrisma.userproduct) {
+    anyPrisma.userProduct = anyPrisma.userproduct;
+  }
+  if (!anyPrisma.userChatThread && anyPrisma.userchatthread) {
+    anyPrisma.userChatThread = anyPrisma.userchatthread;
+  }
+  if (!anyPrisma.userChatMessage && anyPrisma.userchatmessage) {
+    anyPrisma.userChatMessage = anyPrisma.userchatmessage;
+  }
+} catch (err) {
+  // ignore shim errors
+}
 const port = Number(process.env.PORT || 4000);
 const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
 const frontendUrl = process.env.FRONTEND_URL || corsOrigin;
@@ -323,6 +348,7 @@ function defaultProfileData() {
     hours: "",
     domainName: "",
     logoDataUrl: null as string | null,
+    contentImageDataUrl: null as string | null,
     themeColor: "#2563eb",
     aiContent: Prisma.JsonNull as JsonInput,
     websiteActive: false,
@@ -395,6 +421,7 @@ app.post("/auth/register", async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
+      id: crypto.randomUUID(),
       email,
       passwordHash,
       name,
@@ -469,7 +496,12 @@ app.post("/auth/password/forgot", async (req, res) => {
 
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
   await prisma.passwordResetToken.create({
-    data: { userId: user.id, tokenHash, expiresAt },
+    data: {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    },
   });
 
   const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(
@@ -478,8 +510,7 @@ app.post("/auth/password/forgot", async (req, res) => {
 
   try {
     await sendResetEmail({ email, resetUrl });
-  } catch (err) {
-    console.error("Reset email error:", err);
+  } catch {
     return res
       .status(500)
       .json({ success: false, error: "Gagal mengirim email reset." });
@@ -640,6 +671,7 @@ app.get("/auth/google/callback", async (req, res) => {
       } else {
         user = await prisma.user.create({
           data: {
+            id: crypto.randomUUID(),
             email,
             name,
             provider: "google",
@@ -657,8 +689,7 @@ app.get("/auth/google/callback", async (req, res) => {
     res.cookie(authCookieName, token, authCookieOptions);
     res.clearCookie(oauthStateCookieName, { path: "/" });
     return res.redirect(`${frontendUrl}/dashboard?startNew=1`);
-  } catch (err) {
-    console.error("Google OAuth error:", err);
+  } catch {
     return res.status(500).send("Google login failed.");
   }
 });
@@ -740,6 +771,7 @@ app.get("/auth/facebook/callback", async (req, res) => {
       } else {
         user = await prisma.user.create({
           data: {
+            id: crypto.randomUUID(),
             email,
             name,
             provider: "facebook",
@@ -757,36 +789,46 @@ app.get("/auth/facebook/callback", async (req, res) => {
     res.cookie(authCookieName, token, authCookieOptions);
     res.clearCookie(facebookStateCookieName, { path: "/" });
     return res.redirect(`${frontendUrl}/dashboard?startNew=1`);
-  } catch (err) {
-    console.error("Facebook OAuth error:", err);
+  } catch {
     return res.status(500).send("Facebook login failed.");
   }
 });
 
 app.get("/api/owner/profile", requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  let profile = await prisma.userProfile.findUnique({
-    where: { userId: user.id },
-  });
-
-  if (!profile) {
-    profile = await prisma.userProfile.create({
-      data: { userId: user.id, ...defaultProfileData() },
+  try {
+    const user = (req as AuthedRequest).user;
+    let profile = await prisma.userProfile.findUnique({
+      where: { userId: user.id },
     });
+
+    if (!profile) {
+      profile = await prisma.userProfile.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          updatedAt: new Date(),
+          ...defaultProfileData(),
+        },
+      });
+    }
+
+    const latestSite = await prisma.site.findFirst({
+      where: { ownerId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        ...profile,
+        visitorTotal: latestSite?.viewCount || 0,
+      },
+    });
+  } catch {
+    return res
+      .status(500)
+      .json({ success: false, error: "Gagal memuat profile." });
   }
-
-  const latestSite = await prisma.site.findFirst({
-    where: { ownerId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return res.json({
-    success: true,
-    data: {
-      ...profile,
-      visitorTotal: latestSite?.viewCount || 0,
-    },
-  });
 });
 
 app.get("/api/owner/analytics/visitors-7d", requireAuth, async (req, res) => {
@@ -810,9 +852,7 @@ app.get("/api/owner/analytics/visitors-7d", requireAuth, async (req, res) => {
     });
   }
 
-  const rows = await prisma.$queryRaw<
-    Array<{ visitDate: Date; count: number }>
-  >(
+  const rows = (await prisma.$queryRaw(
     Prisma.sql`
       SELECT visitDate, count
       FROM SiteDailyVisit
@@ -820,7 +860,7 @@ app.get("/api/owner/analytics/visitors-7d", requireAuth, async (req, res) => {
         AND visitDate >= ${dateKeys[0]}
       ORDER BY visitDate ASC
     `,
-  );
+  )) as Array<{ visitDate: Date; count: number }>;
 
   const byDate = new Map<string, number>();
   for (const row of rows) {
@@ -840,39 +880,57 @@ app.get("/api/owner/analytics/visitors-7d", requireAuth, async (req, res) => {
 });
 
 app.put("/api/owner/profile", requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const body = req.body as Partial<ReturnType<typeof defaultProfileData>> & {
-    aiContent?: unknown;
-  };
+  try {
+    const user = (req as AuthedRequest).user;
+    const body = req.body as Partial<ReturnType<typeof defaultProfileData>> & {
+      aiContent?: unknown;
+    };
 
-  const data = {
-    name: body.name ?? undefined,
-    businessType: body.businessType ?? undefined,
-    shortDescription: body.shortDescription ?? undefined,
-    targetCustomers: body.targetCustomers ?? undefined,
-    style: body.style ?? undefined,
-    ownerEmail: body.ownerEmail ?? undefined,
-    phone: body.phone ?? undefined,
-    publicEmail: body.publicEmail ?? undefined,
-    address: body.address ?? undefined,
-    hours: body.hours ?? undefined,
-    domainName: body.domainName ?? undefined,
-    logoDataUrl: body.logoDataUrl ?? undefined,
-    themeColor: body.themeColor ?? undefined,
-    aiContent: toJsonValue(body.aiContent),
-    websiteActive:
-      typeof body.websiteActive === "boolean" ? body.websiteActive : undefined,
-    visitorTotal:
-      typeof body.visitorTotal === "number" ? body.visitorTotal : undefined,
-  };
+    const data = {
+      name: body.name ?? undefined,
+      businessType: body.businessType ?? undefined,
+      shortDescription: body.shortDescription ?? undefined,
+      targetCustomers: body.targetCustomers ?? undefined,
+      style: body.style ?? undefined,
+      ownerEmail: body.ownerEmail ?? undefined,
+      phone: body.phone ?? undefined,
+      publicEmail: body.publicEmail ?? undefined,
+      address: body.address ?? undefined,
+      hours: body.hours ?? undefined,
+      domainName: body.domainName ?? undefined,
+      logoDataUrl: body.logoDataUrl ?? undefined,
+      contentImageDataUrl: body.contentImageDataUrl ?? undefined,
+      themeColor: body.themeColor ?? undefined,
+      aiContent: toJsonValue(body.aiContent),
+      websiteActive:
+        typeof body.websiteActive === "boolean"
+          ? body.websiteActive
+          : undefined,
+      visitorTotal:
+        typeof body.visitorTotal === "number" ? body.visitorTotal : undefined,
+    };
 
-  const profile = await prisma.userProfile.upsert({
-    where: { userId: user.id },
-    create: { userId: user.id, ...defaultProfileData(), ...data },
-    update: data,
-  });
+    const profile = await prisma.userProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        updatedAt: new Date(),
+        ...defaultProfileData(),
+        ...data,
+      },
+      update: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
 
-  return res.json({ success: true, data: profile });
+    return res.json({ success: true, data: profile });
+  } catch {
+    return res
+      .status(500)
+      .json({ success: false, error: "Gagal menyimpan settings." });
+  }
 });
 
 app.get("/api/owner/products", requireAuth, async (req, res) => {
@@ -882,7 +940,7 @@ app.get("/api/owner/products", requireAuth, async (req, res) => {
     orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
   });
 
-  const mapped = products.map((product) => ({
+  const mapped = products.map((product: any) => ({
     id: product.id,
     name: product.name,
     price: Number(product.price),
@@ -896,69 +954,79 @@ app.get("/api/owner/products", requireAuth, async (req, res) => {
 });
 
 app.put("/api/owner/products", requireAuth, async (req, res) => {
-  const user = (req as AuthedRequest).user;
-  const body = req.body as {
-    products?: Array<{
-      id?: string;
-      name?: string;
-      price?: number;
-      description?: string;
-      imageDataUrl?: string | null;
-      sortOrder?: number;
-      isActive?: boolean;
-    }>;
-  };
+  try {
+    const user = (req as AuthedRequest).user;
+    const body = req.body as {
+      products?: Array<{
+        id?: string;
+        name?: string;
+        price?: number;
+        description?: string;
+        imageDataUrl?: string | null;
+        sortOrder?: number;
+        isActive?: boolean;
+      }>;
+    };
 
-  const products = Array.isArray(body.products) ? body.products : [];
-  for (const product of products) {
-    if (!product.name || !product.name.trim()) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Nama produk wajib diisi." });
+    const products = Array.isArray(body.products) ? body.products : [];
+    for (const product of products) {
+      if (!product.name || !product.name.trim()) {
+        return res
+          .status(400)
+          .json({ success: false, error: "Nama produk wajib diisi." });
+      }
+      const price = toNumber(product.price, -1);
+      if (price < 0) {
+        return res
+          .status(400)
+          .json({ success: false, error: "Harga tidak valid." });
+      }
     }
-    const price = toNumber(product.price, -1);
-    if (price < 0) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Harga tidak valid." });
-    }
-  }
 
-  const createData = products.map((product) => ({
-    id: product.id,
-    userId: user.id,
-    name: product.name?.trim() || "",
-    description: product.description?.trim() || "",
-    price: toNumber(product.price).toFixed(2),
-    imageDataUrl: product.imageDataUrl || null,
-    sortOrder: toNumber(product.sortOrder),
-    isActive: product.isActive ?? true,
-  }));
-
-  await prisma.$transaction([
-    prisma.userProduct.deleteMany({ where: { userId: user.id } }),
-    ...(createData.length
-      ? [prisma.userProduct.createMany({ data: createData })]
-      : []),
-  ]);
-
-  const updated = await prisma.userProduct.findMany({
-    where: { userId: user.id },
-    orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
-  });
-
-  return res.json({
-    success: true,
-    data: updated.map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      description: product.description || "",
+    const createData = products.map((product) => ({
+      id: product.id || crypto.randomUUID(),
+      userId: user.id,
+      name: product.name?.trim() || "",
+      description: product.description?.trim() || "",
+      price: toNumber(product.price).toFixed(2),
       imageDataUrl: product.imageDataUrl || null,
-      sortOrder: product.sortOrder,
-      isActive: product.isActive,
-    })),
-  });
+      sortOrder: toNumber(product.sortOrder),
+      isActive: product.isActive ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    await prisma.$transaction([
+      prisma.userProduct.deleteMany({ where: { userId: user.id } }),
+      ...(createData.length
+        ? [prisma.userProduct.createMany({ data: createData })]
+        : []),
+    ]);
+
+    const updated = await prisma.userProduct.findMany({
+      where: { userId: user.id },
+      orderBy: [{ sortOrder: "desc" }, { createdAt: "desc" }],
+    });
+
+    return res.json({
+      success: true,
+      data: updated.map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        description: product.description || "",
+        imageDataUrl: product.imageDataUrl || null,
+        sortOrder: product.sortOrder,
+        isActive: product.isActive,
+      })),
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[PUT /api/owner/products] Error:", msg);
+    return res
+      .status(500)
+      .json({ success: false, error: "Gagal menyimpan produk: " + msg });
+  }
 });
 
 app.get("/api/owner/chat", requireAuth, async (req, res) => {
@@ -982,7 +1050,7 @@ app.get("/api/owner/chat", requireAuth, async (req, res) => {
 
   return res.json({
     success: true,
-    data: messages.map((msg) => ({
+    data: messages.map((msg: any) => ({
       id: msg.id,
       role: msg.role,
       content: msg.content,
@@ -1021,6 +1089,7 @@ app.put("/api/owner/chat", requireAuth, async (req, res) => {
     const title = deriveThreadTitle(undefined, messages);
     thread = await prisma.userChatThread.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         title,
       },
@@ -1112,21 +1181,17 @@ app.get("/api/owner/chat/threads", requireAuth, async (req, res) => {
   const threads = await prisma.userChatThread.findMany({
     where: { userId: user.id },
     orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { messages: true } } },
+    include: { _count: { select: { userchatmessage: true } } },
   });
-
-  type ChatThreadRow = Prisma.UserChatThreadGetPayload<{
-    include: { _count: { select: { messages: true } } };
-  }>;
 
   return res.json({
     success: true,
-    data: (threads as ChatThreadRow[]).map((t) => ({
+    data: (threads as any[]).map((t) => ({
       id: t.id,
       title: t.title,
       createdAt: t.createdAt.getTime(),
       updatedAt: t.updatedAt.getTime(),
-      messageCount: t._count.messages,
+      messageCount: t._count.userchatmessage,
     })),
   });
 });
@@ -1156,6 +1221,7 @@ app.post("/api/owner/chat/threads", requireAuth, async (req, res) => {
 
   const thread = await prisma.userChatThread.create({
     data: {
+      id: crypto.randomUUID(),
       userId: user.id,
       title: deriveThreadTitle(title, messages),
     },
@@ -1226,7 +1292,7 @@ app.get("/api/owner/chat/threads/:threadId", requireAuth, async (req, res) => {
 
   return res.json({
     success: true,
-    data: messages.map((msg) => ({
+    data: messages.map((msg: any) => ({
       id: msg.id,
       role: msg.role,
       content: msg.content,
@@ -1422,10 +1488,33 @@ app.post("/api/sites", async (req, res) => {
   const authProfile = authUser
     ? await prisma.userProfile.findUnique({ where: { userId: authUser.id } })
     : null;
+  const authProfileMedia = authProfile as
+    | (typeof authProfile & {
+        contentImageDataUrl?: string | null;
+        logoDataUrl?: string | null;
+      })
+    | null;
   const businessName = body.businessName;
   const businessDescription = body.businessDescription;
   const category = body.category;
   const aiContent = body.aiContent;
+  const overriddenAiContent =
+    authProfileMedia && aiContent && typeof aiContent === "object"
+      ? {
+          ...(aiContent as Record<string, unknown>),
+          heroImage:
+            authProfileMedia.contentImageDataUrl ??
+            (aiContent as { heroImage?: unknown }).heroImage,
+          brand: {
+            ...((aiContent as { brand?: Record<string, unknown> }).brand ?? {}),
+            logoDataUrl:
+              authProfileMedia.logoDataUrl ??
+              (aiContent as { brand?: { logoDataUrl?: unknown } }).brand
+                ?.logoDataUrl ??
+              null,
+          },
+        }
+      : aiContent;
 
   const uniqueSlug = buildSiteSlug(businessName, authProfile?.domainName);
 
@@ -1433,18 +1522,19 @@ app.post("/api/sites", async (req, res) => {
     prisma.site.upsert({
       where: { slug: uniqueSlug },
       create: {
+        id: crypto.randomUUID(),
         businessName,
         businessDescription,
         category,
         slug: uniqueSlug,
-        aiContent: toJsonValue(aiContent) ?? Prisma.JsonNull,
+        aiContent: toJsonValue(overriddenAiContent) ?? Prisma.JsonNull,
         ownerId: authUser?.id || null,
       },
       update: {
         businessName,
         businessDescription,
         category,
-        aiContent: toJsonValue(aiContent) ?? Prisma.JsonNull,
+        aiContent: toJsonValue(overriddenAiContent) ?? Prisma.JsonNull,
         ownerId: authUser?.id || null,
       },
     });
@@ -1454,10 +1544,6 @@ app.post("/api/sites", async (req, res) => {
     const url = buildLocalSiteUrl(authProfile?.domainName) || undefined;
     return res.json({ success: true, data: { ...site, url } });
   } catch (err: any) {
-    console.error(
-      "[ERROR] /api/sites failed:",
-      err?.code || err?.message || err,
-    );
     // Prisma throws P2000 when a value is too long for the column.
     if (err?.code === "P2000") {
       const truncated = body.businessDescription.slice(0, 180);
@@ -1479,6 +1565,8 @@ app.post("/api/sites", async (req, res) => {
       }
     }
 
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/sites] Error:", msg);
     return res
       .status(500)
       .json({ success: false, error: "Gagal deploy website." });
@@ -1560,6 +1648,7 @@ app.post("/api/sites/:siteId/products", async (req, res) => {
 
   const product = await prisma.product.create({
     data: {
+      id: crypto.randomUUID(),
       siteId,
       name: body.name,
       description: body.description || null,

@@ -150,7 +150,7 @@ export default function AIGeneratorPage() {
 
       const ai = await generateWebsiteContent({
         businessName: umkmName,
-        businessDescription: `${shortDescription}\nTarget pelanggan: ${targetCustomers}\nStyle: ${style}\nKontak (gunakan jika ada):\nTelepon: ${nextProfile.phone || "-"}\nEmail: ${nextProfile.publicEmail || nextProfile.ownerEmail || "-"}\nAlamat: ${nextProfile.address || "-"}\nJam buka: ${nextProfile.hours || "-"}`,
+        businessDescription: shortDescription,
         category: businessType,
       });
 

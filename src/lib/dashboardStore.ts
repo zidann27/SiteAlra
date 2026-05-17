@@ -15,6 +15,7 @@ export type UmkmProfile = {
   hours: string;
   domainName: string;
   logoDataUrl: string | null;
+  contentImageDataUrl: string | null;
   themeColor: string; // primary color
 };
 
@@ -84,7 +85,52 @@ export function getDefaultProfile(): UmkmProfile {
     hours: "",
     domainName: "",
     logoDataUrl: null,
+    contentImageDataUrl: null,
     themeColor: "#2563eb", // tailwind blue-600-ish
+  };
+}
+
+export function applyProfileOverrides(
+  content: AIContent | null,
+  profile: Pick<
+    UmkmProfile,
+    | "name"
+    | "businessType"
+    | "phone"
+    | "publicEmail"
+    | "ownerEmail"
+    | "address"
+    | "hours"
+    | "logoDataUrl"
+    | "contentImageDataUrl"
+    | "style"
+    | "themeColor"
+  >,
+  products?: AIContent["products"],
+): AIContent | null {
+  if (!content) return null;
+
+  return {
+    ...content,
+    style: profile.style || content.style,
+    title: profile.name || content.title,
+    contact: {
+      ...content.contact,
+      phone: profile.phone || content.contact.phone,
+      email: profile.publicEmail || profile.ownerEmail || content.contact.email,
+      address: profile.address || content.contact.address,
+      hours: profile.hours || content.contact.hours,
+    },
+    brand: {
+      ...(content.brand ?? {}),
+      logoDataUrl: profile.logoDataUrl ?? content.brand?.logoDataUrl,
+    },
+    products: products?.length ? products : content.products,
+    heroImage: profile.contentImageDataUrl || content.heroImage,
+    colorScheme: {
+      ...content.colorScheme,
+      primary: profile.themeColor || content.colorScheme.primary,
+    },
   };
 }
 
@@ -191,7 +237,10 @@ export async function saveProducts(
 
 export async function loadAiContent(): Promise<AIContent | null> {
   const profile = await fetchProfile();
-  return (profile.aiContent as AIContent | null) ?? null;
+  return applyProfileOverrides(
+    (profile.aiContent as AIContent | null) ?? null,
+    profile,
+  );
 }
 
 export async function saveAiContent(content: AIContent): Promise<void> {

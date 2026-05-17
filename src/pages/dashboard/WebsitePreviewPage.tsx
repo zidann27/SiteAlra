@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import SiteTemplate from "../../components/preview/SiteTemplate";
 import {
+  applyProfileOverrides,
   getDefaultProfile,
   loadAiContent,
   loadProducts,
@@ -78,29 +79,16 @@ export default function WebsitePreviewPage() {
         return;
       }
 
-      const merged: AIContent = {
-        ...ai,
-        style: profileData.style,
-        title: profileData.name || ai.title,
-        contact: {
-          phone: profileData.phone || ai.contact.phone,
-          email:
-            profileData.publicEmail ||
-            profileData.ownerEmail ||
-            ai.contact.email,
-          address: profileData.address || ai.contact.address,
-          hours: profileData.hours || ai.contact.hours,
-        },
-        brand: {
-          ...(ai.brand ?? {}),
-          logoDataUrl: profileData.logoDataUrl ?? ai.brand?.logoDataUrl,
-        },
-        products: products.length ? mapProductsToAI(products) : ai.products,
-        colorScheme: {
-          ...ai.colorScheme,
-          primary: profileData.themeColor || ai.colorScheme.primary,
-        },
-      };
+      const merged = applyProfileOverrides(
+        ai,
+        profileData,
+        products.length ? mapProductsToAI(products) : undefined,
+      );
+
+      if (!merged) {
+        setContent(null);
+        return;
+      }
 
       setContent(merged);
       setDraft({
@@ -209,7 +197,7 @@ export default function WebsitePreviewPage() {
   }
 
   return (
-    <div>
+    <div className="px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">

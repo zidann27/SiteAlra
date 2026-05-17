@@ -87,10 +87,6 @@ export default function SiteTemplateModern({
                 <div className="font-black text-lg tracking-tight">
                   {content.title}
                 </div>
-
-                <div className="text-xs text-gray-400 font-medium">
-                  Modern Experience
-                </div>
               </div>
             </div>
 

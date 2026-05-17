@@ -7,158 +7,149 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String?
-  name         String?
-  provider     String?  @default("local")
-  providerId   String?
-  createdAt    DateTime @default(now())
-
-  sites        Site[]
-  profile      UserProfile?
-  products     UserProduct[]
-  chatThreads  UserChatThread[]
-  chatMessages UserChatMessage[]
-  passwordResets PasswordResetToken[]
-
-  @@index([provider])
-  @@unique([provider, providerId])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
+model passwordresettoken {
+  id        String   @id
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
+  tokenHash String   @unique(map: "PasswordResetToken_tokenHash_key")
   expiresAt DateTime
   createdAt DateTime @default(now())
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "PasswordResetToken_userId_fkey")
 
-  @@index([userId])
-  @@index([expiresAt])
+  @@index([expiresAt], map: "PasswordResetToken_expiresAt_idx")
+  @@index([userId], map: "PasswordResetToken_userId_idx")
 }
 
-model UserProfile {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name             String   @default("")
-  businessType     String   @default("kuliner")
-  shortDescription String   @default("")
-  targetCustomers  String   @default("")
-  style            String   @default("modern")
-  ownerEmail       String   @default("")
-  phone            String   @default("")
-  publicEmail      String   @default("")
-  address          String   @default("")
-  hours            String   @default("")
-  domainName       String   @default("")
-  logoDataUrl      String?  @db.LongText
-  themeColor       String   @default("#2563eb")
-
-  aiContent        Json?
-  websiteActive    Boolean  @default(false)
-  visitorTotal     Int      @default(0)
-
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-}
-
-model UserProduct {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name         String
-  description  String   @default("")
-  price        Decimal  @db.Decimal(12, 2)
-  imageDataUrl String?  @db.LongText
-  isActive     Boolean  @default(true)
-  sortOrder    Int      @default(0)
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([userId])
-}
-
-model UserChatThread {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  title     String   @default("Chat")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  messages  UserChatMessage[]
-
-  @@index([userId])
-  @@index([updatedAt])
-}
-
-model UserChatMessage {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  threadId  String
-  thread    UserChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-
-  role      String
-  content   String   @db.LongText
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([threadId])
-  @@index([createdAt])
-}
-
-model Site {
-  id                  String   @id @default(cuid())
-  businessName        String
-  businessDescription String   @db.LongText
-  category            String   @default("umum")
-  slug                String   @unique
-  aiContent           Json
-  viewCount           Int      @default(0)
-  ownerId             String?
-  owner               User?    @relation(fields: [ownerId], references: [id])
-  createdAt           DateTime @default(now())
-
-  products            Product[]
-  dailyVisits         SiteDailyVisit[]
-}
-
-model SiteDailyVisit {
-  id        String   @id
-  siteId    String
-  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  visitDate DateTime @db.Date
-  count     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([siteId, visitDate])
-  @@index([visitDate])
-}
-
-model Product {
-  id          String   @id @default(cuid())
+model product {
+  id          String   @id
   siteId      String
-  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
-
   name        String
   description String?
   price       Decimal  @db.Decimal(12, 2)
   imageUrl    String?
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
-
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime
+  site        site     @relation(fields: [siteId], references: [id], onDelete: Cascade, map: "Product_siteId_fkey")
 
-  @@index([siteId])
-  @@index([isActive])
+  @@index([isActive], map: "Product_isActive_idx")
+  @@index([siteId], map: "Product_siteId_idx")
+}
+
+model site {
+  id                  String           @id
+  businessName        String
+  businessDescription String           @db.LongText
+  category            String           @default("umum")
+  slug                String           @unique(map: "Site_slug_key")
+  aiContent           Json
+  viewCount           Int              @default(0)
+  ownerId             String?
+  createdAt           DateTime         @default(now())
+  product             product[]
+  user                user?            @relation(fields: [ownerId], references: [id], map: "Site_ownerId_fkey")
+  sitedailyvisit      sitedailyvisit[]
+
+  @@index([ownerId], map: "Site_ownerId_fkey")
+}
+
+model sitedailyvisit {
+  id        String   @id
+  siteId    String
+  visitDate DateTime @db.Date
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  site      site     @relation(fields: [siteId], references: [id], onDelete: Cascade, map: "SiteDailyVisit_siteId_fkey")
+
+  @@unique([siteId, visitDate], map: "SiteDailyVisit_siteId_visitDate_key")
+  @@index([visitDate], map: "SiteDailyVisit_visitDate_idx")
+}
+
+model user {
+  id                 String               @id
+  email              String               @unique(map: "User_email_key")
+  passwordHash       String?
+  name               String?
+  provider           String?              @default("local")
+  providerId         String?
+  createdAt          DateTime             @default(now())
+  passwordresettoken passwordresettoken[]
+  site               site[]
+  userchatmessage    userchatmessage[]
+  userchatthread     userchatthread[]
+  userproduct        userproduct[]
+  userprofile        userprofile?
+
+  @@unique([provider, providerId], map: "User_provider_providerId_key")
+  @@index([provider], map: "User_provider_idx")
+}
+
+model userchatmessage {
+  id             String         @id
+  userId         String
+  role           String
+  content        String         @db.LongText
+  createdAt      DateTime       @default(now())
+  threadId       String
+  userchatthread userchatthread @relation(fields: [threadId], references: [id], onDelete: Cascade, map: "UserChatMessage_threadId_fkey")
+  user           user           @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserChatMessage_userId_fkey")
+
+  @@index([createdAt], map: "UserChatMessage_createdAt_idx")
+  @@index([threadId], map: "UserChatMessage_threadId_idx")
+  @@index([userId], map: "UserChatMessage_userId_idx")
+}
+
+model userchatthread {
+  id              String            @id
+  userId          String
+  title           String            @default("Chat")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now())
+  userchatmessage userchatmessage[]
+  user            user              @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserChatThread_userId_fkey")
+
+  @@index([updatedAt], map: "UserChatThread_updatedAt_idx")
+  @@index([userId], map: "UserChatThread_userId_idx")
+}
+
+model userproduct {
+  id           String   @id
+  userId       String
+  name         String
+  description  String   @default("")
+  price        Decimal  @db.Decimal(12, 2)
+  imageDataUrl String?  @db.LongText
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserProduct_userId_fkey")
+
+  @@index([userId], map: "UserProduct_userId_idx")
+}
+
+model userprofile {
+  id                  String   @id
+  userId              String   @unique(map: "UserProfile_userId_key")
+  name                String   @default("")
+  businessType        String   @default("kuliner")
+  shortDescription    String   @default("")
+  targetCustomers     String   @default("")
+  style               String   @default("modern")
+  ownerEmail          String   @default("")
+  phone               String   @default("")
+  publicEmail         String   @default("")
+  address             String   @default("")
+  hours               String   @default("")
+  domainName          String   @default("")
+  logoDataUrl         String?  @db.LongText
+  contentImageDataUrl String?  @db.LongText
+  themeColor          String   @default("#2563eb")
+  aiContent           Json?
+  websiteActive       Boolean  @default(false)
+  visitorTotal        Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime
+  user                user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserProfile_userId_fkey")
 }

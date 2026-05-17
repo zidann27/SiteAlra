@@ -21,6 +21,7 @@ export default function SettingsPage() {
     hours: "",
     domainName: "",
     logoDataUrl: null,
+    contentImageDataUrl: null,
     themeColor: "#2563eb",
   });
   const [saved, setSaved] = useState(false);
@@ -56,16 +57,20 @@ export default function SettingsPage() {
     }
   };
 
-  const onLogo = async (file: File | null, input?: HTMLInputElement) => {
+  const onImageUpload = async (
+    file: File | null,
+    field: "logoDataUrl" | "contentImageDataUrl",
+    input?: HTMLInputElement,
+  ) => {
     if (!file) return;
     if (file.size > maxImageBytes) {
-      setError("Ukuran logo terlalu besar (maks 5MB).");
-      setForm((f) => ({ ...f, logoDataUrl: null }));
+      setError("Ukuran gambar terlalu besar (maks 5MB).");
+      setForm((f) => ({ ...f, [field]: null }));
       if (input) input.value = "";
       return;
     }
     const dataUrl = await fileToDataUrl(file);
-    setForm((f) => ({ ...f, logoDataUrl: dataUrl }));
+    setForm((f) => ({ ...f, [field]: dataUrl }));
   };
 
   return (
@@ -122,11 +127,52 @@ export default function SettingsPage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) =>
-                    onLogo(e.target.files?.[0] ?? null, e.target)
+                    onImageUpload(
+                      e.target.files?.[0] ?? null,
+                      "logoDataUrl",
+                      e.target,
+                    )
                   }
                   className="text-sm text-gray-600 dark:text-gray-400 transition-colors"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+                Gambar konten
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="w-24 h-16 sm:w-28 sm:h-20 rounded-2xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 overflow-hidden flex items-center justify-center transition-colors">
+                  {form.contentImageDataUrl ? (
+                    <img
+                      src={form.contentImageDataUrl}
+                      alt="Gambar konten"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <ImageIcon
+                      size={20}
+                      className="text-gray-400 dark:text-slate-500"
+                    />
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    onImageUpload(
+                      e.target.files?.[0] ?? null,
+                      "contentImageDataUrl",
+                      e.target,
+                    )
+                  }
+                  className="text-sm text-gray-600 dark:text-gray-400 transition-colors"
+                />
+              </div>
+              <p className="mt-2 text-xs text-gray-500 dark:text-slate-500">
+                Dipakai sebagai gambar hero/konten di template website.
+              </p>
             </div>
 
             {error && (
@@ -232,7 +278,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 transition-colors">
-                Domain name (optional dummy)
+                Domain name (optional)
               </label>
               <input
                 type="text"

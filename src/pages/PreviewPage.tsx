@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Eye,
@@ -14,6 +14,11 @@ import {
 import { AIContent, GenerateFormData } from "../lib/types";
 import { deploySite } from "../lib/api";
 import SiteTemplate from "../components/preview/SiteTemplate";
+import {
+  applyProfileOverrides,
+  getDefaultProfile,
+  loadProfile,
+} from "../lib/dashboardStore";
 
 interface LocationState {
   formData: GenerateFormData;
@@ -24,12 +29,26 @@ export default function PreviewPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as LocationState | null;
+  const [profile, setProfile] = useState(getDefaultProfile());
 
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [deployError, setDeployError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const profileData = await loadProfile();
+      if (alive) setProfile(profileData);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   if (!state?.formData || !state?.aiContent) {
     return (
@@ -50,12 +69,13 @@ export default function PreviewPage() {
   }
 
   const { formData, aiContent } = state;
+  const mergedContent = applyProfileOverrides(aiContent, profile) ?? aiContent;
 
   const handleDeploy = async () => {
     setIsDeploying(true);
     setDeployError("");
     try {
-      const site = await deploySite(formData, aiContent);
+      const site = await deploySite(formData, mergedContent);
       const siteUrl = site.url || `${window.location.origin}/site/${site.slug}`;
       setDeployedUrl(siteUrl);
       setIsDeploying(false);
@@ -220,7 +240,7 @@ export default function PreviewPage() {
             }
           >
             <SiteTemplate
-              content={aiContent}
+              content={mergedContent}
               businessName={formData.businessName}
               category={formData.category}
               isPreview={true}
