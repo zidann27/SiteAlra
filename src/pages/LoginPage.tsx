@@ -1,7 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
-import { getGoogleAuthUrl, signInWithPassword } from "../lib/auth";
+import {
+  getFacebookAuthUrl,
+  getGoogleAuthUrl,
+  signInWithPassword,
+} from "../lib/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -44,7 +48,9 @@ export default function LoginPage() {
     try {
       await signInWithPassword(email.trim(), password);
       sessionStorage.setItem("sitealra_chat_start_new", "1");
-      navigate(redirectTo, { replace: true });
+      const target = new URL(redirectTo, window.location.origin);
+      target.searchParams.set("startNew", "1");
+      navigate(`${target.pathname}${target.search}`, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login gagal.");
     } finally {
@@ -60,44 +66,54 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row font-sans selection:bg-blue-100 bg-white overflow-hidden">
-      {/* =========================================
-          LEFT PANEL: THE BRAND VISTA (TONE BIRU)
-      ========================================= */}
+      {/* ── LEFT PANEL ── */}
       <div className="w-full md:w-1/2 bg-[#020617] flex items-center justify-center p-8 sm:p-16 min-h-[40vh] md:min-h-screen relative overflow-hidden">
-        {/* Background Image UMKM */}
+        {/* Background image */}
         <div
-          className="absolute inset-0 z-0 opacity-40 bg-cover bg-center transition-transform duration-1000 hover:scale-110"
+          className="absolute inset-0 z-0 opacity-30 bg-cover bg-center transition-transform duration-1000 hover:scale-110"
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1556740734-7f95834d1fb2?auto=format&fit=crop&q=80')",
           }}
-        ></div>
-
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 z-1 bg-gradient-to-br from-[#020617] via-[#020617]/90 to-blue-900/40"></div>
-
-        {/* Dekorasi Cahaya (Glow) */}
-        <div className="absolute top-1/4 -left-20 w-64 h-64 bg-blue-600/20 rounded-full blur-[100px] z-2"></div>
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 z-[1] bg-gradient-to-br from-[#020617] via-[#020617]/90 to-blue-900/40" />
+        {/* Glow */}
+        <div className="absolute top-1/4 -left-20 w-64 h-64 bg-blue-600/20 rounded-full blur-[100px] z-[2]" />
+        <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-indigo-500/15 rounded-full blur-[90px] z-[2]" />
 
         <div className="relative z-10 w-full max-w-md flex flex-col justify-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-10 tracking-tight leading-[1.15]">
+          {/* Logo */}
+          <div className="mb-8">
+            <span className="text-2xl font-bold tracking-tighter text-white">
+              SiteAlra.
+            </span>
+          </div>
+
+          {/* Icon dekorasi */}
+          <div className="mb-8 w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
+            <ArrowRight size={28} className="text-blue-400" />
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight leading-[1.15]">
             Bangun Website
             <br />
             Bisnis Anda
           </h1>
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-xs mb-10">
+            Platform all-in-one untuk UMKM Indonesia. Buat, kelola, dan
+            kembangkan bisnis kamu secara digital.
+          </p>
 
-          <ul className="space-y-6">
+          <ul className="space-y-4">
             {features.map((feature, idx) => (
-              <li key={idx} className="flex items-center gap-4 text-zinc-300">
-                <div className="bg-blue-500/20 p-1 rounded-full">
-                  <ArrowRight
-                    size={18}
-                    className="text-blue-400 flex-shrink-0"
-                  />
+              <li key={idx} className="flex items-center gap-3 text-zinc-300">
+                <div className="w-7 h-7 rounded-full bg-blue-600/30 border border-blue-500/40 flex items-center justify-center flex-shrink-0">
+                  <span className="text-blue-300 text-xs font-bold">
+                    {idx + 1}
+                  </span>
                 </div>
-                <span className="font-medium tracking-wide text-sm">
-                  {feature}
-                </span>
+                <span className="text-sm">{feature}</span>
               </li>
             ))}
           </ul>
@@ -131,7 +147,6 @@ export default function LoginPage() {
               SiteAlra.
             </span>
           </div>
-
           {/* Header Content */}
           <div className="mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-zinc-900 mb-2 sm:mb-3">
@@ -152,6 +167,9 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="space-y-5">
             {/* Email Input */}
             <div>
+              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                Alamat Email
+              </label>
               <div className="relative group flex items-center">
                 <div className="absolute left-4 flex items-center justify-center">
                   <Mail
@@ -221,6 +239,15 @@ export default function LoginPage() {
                 "Masuk"
               )}
             </button>
+
+            <div className="text-center">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+              >
+                Lupa password?
+              </Link>
+            </div>
           </form>
 
           <div className="mt-3 sm:mt-4">
@@ -231,6 +258,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 aria-label="Lanjutkan dengan Facebook"
+                onClick={() => {
+                  window.location.href = getFacebookAuthUrl();
+                }}
                 className="flex-1 sm:flex-none sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-xs sm:text-sm hover:border-blue-200 hover:text-blue-700"
               >
                 <svg

@@ -1,6 +1,28 @@
 import { useEffect, useState } from "react";
 import { BarChart3, MousePointerClick, Percent, Users } from "lucide-react";
-import { getVisitorTotal, loadProducts } from "../../lib/dashboardStore";
+import { getVisitorSeries7d, loadProducts } from "../../lib/dashboardStore";
+
+function formatDayLabel(dateKey: string): string {
+  try {
+    return new Intl.DateTimeFormat("id-ID", { weekday: "short" })
+      .format(new Date(`${dateKey}T00:00:00Z`))
+      .replace(".", "");
+  } catch {
+    return "-";
+  }
+}
+
+function formatLongDate(dateKey: string): string {
+  try {
+    return new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "2-digit",
+      month: "short",
+    }).format(new Date(`${dateKey}T00:00:00Z`));
+  } catch {
+    return dateKey;
+  }
+}
 
 function StatCard({
   title,
@@ -36,20 +58,25 @@ function StatCard({
 }
 
 export default function AnalyticsPage() {
-  const [visitorTotal, setVisitorTotal] = useState(0);
+  const [visitorTotal7d, setVisitorTotal7d] = useState(0);
+  const [visitorSeries, setVisitorSeries] = useState<
+    Array<{ date: string; value: number }>
+  >([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [products, setProducts] = useState<Array<{ name: string }>>([]);
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
-      const [visitor, list] = await Promise.all([
-        getVisitorTotal(),
+      const [series, list] = await Promise.all([
+        getVisitorSeries7d(),
         loadProducts(),
       ]);
 
       if (!alive) return;
-      setVisitorTotal(visitor);
+      setVisitorSeries(series);
+      setVisitorTotal7d(series.reduce((sum, p) => sum + p.value, 0));
       setProducts(list);
     })();
 
@@ -59,89 +86,139 @@ export default function AnalyticsPage() {
   }, []);
 
   const topProduct = products[0]?.name || "-";
+  const chartData = visitorSeries.length
+    ? visitorSeries
+    : [0, 1, 2, 3, 4, 5, 6].map((i) => {
+        const d = new Date();
+        d.setUTCDate(d.getUTCDate() - (6 - i));
+        return { date: d.toISOString().slice(0, 10), value: 0 };
+      });
+  const maxValue = Math.max(1, ...chartData.map((d) => d.value));
+  const selectedPoint =
+    chartData.find((d) => d.date === selectedDate) ||
+    chartData[chartData.length - 1];
 
-  // Dummy values (FE-only)
-  const clickCta = Math.max(0, Math.round(visitorTotal * 0.12));
+  useEffect(() => {
+    if (!selectedDate && chartData.length) {
+      setSelectedDate(chartData[chartData.length - 1].date);
+    }
+  }, [chartData, selectedDate]);
+
+  const clickCta = Math.max(0, Math.round(visitorTotal7d * 0.12));
   const conversionRate =
-    visitorTotal > 0 ? Math.round((clickCta / visitorTotal) * 100) : 0;
-
-  const chart = [
-    { label: "Sen", value: 12 },
-    { label: "Sel", value: 18 },
-    { label: "Rab", value: 10 },
-    { label: "Kam", value: 22 },
-    { label: "Jum", value: 30 },
-    { label: "Sab", value: 26 },
-    { label: "Min", value: 14 },
-  ];
-
-  const max = Math.max(...chart.map((c) => c.value));
+    visitorTotal7d > 0 ? Math.round((clickCta / visitorTotal7d) * 100) : 0;
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="px-4 sm:px-8 pt-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white transition-colors">
           Analytics
         </h1>
-        <p className="text-gray-500 dark:text-slate-400 mt-2 transition-colors">
+        <p className="text-sm sm:text-base text-gray-500 dark:text-slate-400 mt-2 transition-colors">
           Statistik ringkas untuk dashboard.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard
-          title="Total Visitor"
-          value={String(visitorTotal)}
-          subtitle="Total pengunjung tersimpan"
-          Icon={Users}
-        />
-        <StatCard
-          title="Produk paling dilihat"
-          value={topProduct}
-          subtitle="Produk teratas saat ini"
-          Icon={BarChart3}
-        />
-        <StatCard
-          title="Click CTA"
-          value={String(clickCta)}
-          subtitle="Perkiraan keterlibatan"
-          Icon={MousePointerClick}
-        />
-        <StatCard
-          title="Conversion rate"
-          value={`${conversionRate}%`}
-          subtitle="Perkiraan konversi"
-          Icon={Percent}
-        />
+      <div className="px-4 sm:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6">
+          <StatCard
+            title="Visitor 7 Hari"
+            value={String(visitorTotal7d)}
+            subtitle="Total kunjungan 7 hari terakhir"
+            Icon={Users}
+          />
+          <StatCard
+            title="Produk paling dilihat"
+            value={topProduct}
+            subtitle="Produk teratas saat ini"
+            Icon={BarChart3}
+          />
+          <StatCard
+            title="Click CTA"
+            value={String(clickCta)}
+            subtitle="Perkiraan keterlibatan"
+            Icon={MousePointerClick}
+          />
+          <StatCard
+            title="Conversion rate"
+            value={`${conversionRate}%`}
+            subtitle="Perkiraan konversi"
+            Icon={Percent}
+          />
+        </div>
       </div>
 
-      <div className="mt-6 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-6 transition-colors">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="font-bold text-gray-900 dark:text-white transition-colors">
-              Grafik Visitor
-            </div>
-            <div className="text-sm text-gray-500 dark:text-slate-400 mt-1 transition-colors">
-              7 hari terakhir
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-3 items-end h-40">
-          {chart.map((c) => (
-            <div key={c.label} className="flex flex-col items-center gap-2">
-              <div
-                className="w-full rounded-xl bg-blue-600/90"
-                style={{
-                  height: `${Math.max(8, Math.round((c.value / max) * 100))}%`,
-                }}
-                title={`${c.value}`}
-              />
-              <div className="text-xs text-gray-400 dark:text-slate-500 transition-colors">
-                {c.label}
+      <div className="px-4 sm:px-8">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm p-4 sm:p-6 transition-colors">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white transition-colors">
+                Grafik Visitor
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-1 transition-colors">
+                7 hari terakhir (deployment terbaru)
               </div>
             </div>
-          ))}
+          </div>
+
+          <div className="mb-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-900/40 px-3 py-2 text-xs sm:text-sm text-blue-800 dark:text-blue-200">
+            <span className="font-semibold">Dipilih:</span>{" "}
+            {selectedPoint
+              ? `${formatLongDate(selectedPoint.date)} - ${selectedPoint.value} kunjungan`
+              : "-"}
+          </div>
+
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-2 sm:gap-3 h-40 sm:h-44 min-w-[320px]">
+              {chartData.map((point) => {
+                const active = selectedPoint?.date === point.date;
+                return (
+                  <div
+                    key={point.date}
+                    className="flex flex-col items-center gap-2 h-full"
+                  >
+                    <div className="w-full flex-1 flex items-end">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDate(point.date)}
+                        className={`w-full rounded-xl transition-all ${
+                          active
+                            ? "bg-blue-600 shadow-[0_8px_20px_rgba(37,99,235,0.35)]"
+                            : "bg-blue-500/80 hover:bg-blue-600"
+                        }`}
+                        style={{
+                          height: `${Math.max(8, Math.round((point.value / maxValue) * 100))}%`,
+                        }}
+                        title={`${point.value} kunjungan`}
+                        aria-label={`${formatDayLabel(point.date)} ${point.value} kunjungan`}
+                      />
+                    </div>
+                    <div
+                      className={`text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                        active
+                          ? "text-blue-700 dark:text-blue-300 font-semibold"
+                          : "text-gray-400 dark:text-slate-500"
+                      }`}
+                    >
+                      {formatDayLabel(point.date)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-400 dark:text-slate-600 text-center my-2">
+            ← Scroll →
+          </div>
+
+          <div className="mt-4 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
+            Total 7 hari:{" "}
+            <span className="font-semibold text-gray-700 dark:text-slate-200">
+              {chartData.reduce((sum, p) => sum + p.value, 0)}
+            </span>{" "}
+            kunjungan
+          </div>
         </div>
       </div>
     </div>

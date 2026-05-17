@@ -13,7 +13,14 @@ import {
 import { getSessionUser, signOut } from "../../lib/auth";
 import DashboardChatWidget from "./DashboardChatWidget";
 
-const navItems = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+};
+
+const navItems: NavItem[] = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/dashboard/generator", label: "AI Generator", icon: Sparkles },
   { to: "/dashboard/products", label: "Produk", icon: Package },
@@ -48,7 +55,21 @@ export default function DashboardLayout() {
     if (location.pathname.startsWith("/dashboard/preview")) {
       setCollapsed((v) => (v ? v : true));
     }
-  }, [location.pathname]);
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("startNew") !== "1") return;
+
+    sessionStorage.setItem("sitealra_chat_start_new", "1");
+    params.delete("startNew");
+    const nextSearch = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+      },
+      { replace: true },
+    );
+  }, [location.pathname, location.search, navigate]);
 
   const sidebarWidth = collapsed ? "md:w-24" : "md:w-64";
   const contentPadding = collapsed ? "md:pl-24" : "md:pl-64";
@@ -120,7 +141,7 @@ export default function DashboardLayout() {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    end={item.end as any}
+                    end={Boolean(item.end)}
                     title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       `group flex items-center rounded-xl text-sm font-semibold transition-colors ${
@@ -173,11 +194,11 @@ export default function DashboardLayout() {
         </aside>
 
         <div
-          className={`flex-1 ${contentPadding} md:pr-4 md:py-4 transition-[padding] duration-300`}
+          className={`flex-1 ${contentPadding} md:pr-4 md:py-4 transition-[padding] duration-300 flex flex-col w-full`}
           style={{ paddingBottom: 0 }}
         >
-          <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 md:hidden transition-colors">
-            <div className="flex items-center gap-2 min-w-0">
+          <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 md:hidden transition-colors gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0 text-xs">
                 SA
               </div>
@@ -190,14 +211,14 @@ export default function DashboardLayout() {
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-semibold transition-colors flex-shrink-0"
             >
               <LogOut size={14} />
-              Logout
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </header>
 
-          <main className="px-4 sm:px-6 py-8 md:py-0 pb-24 md:pb-0 bg-gray-50 dark:bg-slate-950 transition-colors">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-slate-950 transition-colors md:py-0 pb-24 md:pb-0">
             <Outlet />
           </main>
 
@@ -227,11 +248,10 @@ export default function DashboardLayout() {
             <button
               type="button"
               onClick={() => chatWidgetRef.current?.openChat()}
-              className="flex-1 flex flex-col items-center justify-center text-white text-xs font-semibold px-2 py-2 rounded-full bg-blue-600 hover:bg-blue-700 shadow-md transition-colors"
+              className="w-12 h-12 inline-flex items-center justify-center text-white rounded-full bg-blue-600 hover:bg-blue-700 shadow-md transition-colors"
               title="Buka Chatbot"
             >
-              <Bot size={18} />
-              <span className="mt-0.5 text-[10px] truncate">Chat</span>
+              <Bot size={20} />
             </button>
           </div>
         </div>

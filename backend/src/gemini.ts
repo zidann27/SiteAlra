@@ -28,6 +28,19 @@ type GeminiErrorPayload = {
   };
 };
 
+type GeminiListModelsResponse = {
+  models?: GeminiModel[];
+};
+
+type GeminiGenerateResponse = {
+  candidates?: Array<{
+    finishReason?: string;
+    content?: {
+      parts?: Array<{ text?: string }>;
+    };
+  }>;
+};
+
 function toGeminiRole(role: ChatHistoryItem["role"]): "user" | "model" {
   return role === "assistant" ? "model" : "user";
 }
@@ -44,6 +57,11 @@ function buildSystemInstruction(ctx?: ChatContext): string {
     "Gunakan format plain text (tanpa Markdown). Jangan gunakan tanda: *, **, #, ```.",
     "Jika perlu list, pakai penomoran seperti 1) 2) 3) atau gunakan simbol •.",
     "Jika info kurang, tanya 1-3 pertanyaan klarifikasi.",
+    "Jika pengguna bertanya tentang SiteAlra, jangan bilang tidak tahu.",
+    "SiteAlra adalah platform untuk membantu UMKM membuat website dengan bantuan AI, tanpa perlu coding.",
+    "Soroti manfaat utama: AI Precision (konten sesuai profil bisnis), Modern Design (desain modern untuk konversi), Cloud Secure (keamanan data di cloud).",
+    "Jika ditanya biaya, jelaskan bahwa biaya tergantung paket/fitur dan tawarkan untuk cek paket atau tanya kebutuhan pengguna.",
+    "Jika history menyebut nama bisnis lama, abaikan. Selalu gunakan nama bisnis terbaru dari konteks.",
   ];
 
   if (businessName) lines.push(`Nama bisnis: ${businessName}`);
@@ -139,7 +157,7 @@ async function listModels(apiKey: string): Promise<GeminiModel[]> {
     );
   }
 
-  const data = (await response.json()) as any;
+  const data = (await response.json()) as GeminiListModelsResponse;
   const models = Array.isArray(data?.models)
     ? (data.models as GeminiModel[])
     : [];
@@ -262,11 +280,11 @@ export async function chatWithGeminiFlash(req: ChatRequest): Promise<string> {
     throw new Error(toFriendlyGeminiError(response.status, text));
   }
 
-  const data = (await response.json()) as any;
+  const data = (await response.json()) as GeminiGenerateResponse;
   const finishReason = data?.candidates?.[0]?.finishReason;
   const reply =
     data?.candidates?.[0]?.content?.parts
-      ?.map((p: any) => (typeof p?.text === "string" ? p.text : ""))
+      ?.map((p) => (typeof p?.text === "string" ? p.text : ""))
       .join("")
       .trim() || "";
 

@@ -19,23 +19,24 @@ model User {
   sites        Site[]
   profile      UserProfile?
   products     UserProduct[]
+  chatThreads  UserChatThread[]
   chatMessages UserChatMessage[]
+  passwordResets PasswordResetToken[]
 
   @@index([provider])
   @@unique([provider, providerId])
 }
 
-model UserChatMessage {
+model PasswordResetToken {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  role      String
-  content   String   @db.LongText
+  tokenHash String   @unique
+  expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])
-  @@index([createdAt])
+  @@index([expiresAt])
 }
 
 model UserProfile {
@@ -83,6 +84,37 @@ model UserProduct {
   @@index([userId])
 }
 
+model UserChatThread {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String   @default("Chat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  UserChatMessage[]
+
+  @@index([userId])
+  @@index([updatedAt])
+}
+
+model UserChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threadId  String
+  thread    UserChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  role      String
+  content   String   @db.LongText
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([threadId])
+  @@index([createdAt])
+}
+
 model Site {
   id                  String   @id @default(cuid())
   businessName        String
@@ -96,6 +128,20 @@ model Site {
   createdAt           DateTime @default(now())
 
   products            Product[]
+  dailyVisits         SiteDailyVisit[]
+}
+
+model SiteDailyVisit {
+  id        String   @id
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  visitDate DateTime @db.Date
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([siteId, visitDate])
+  @@index([visitDate])
 }
 
 model Product {

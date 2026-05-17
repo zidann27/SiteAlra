@@ -1,0 +1,3 @@
+-- This migration is intentionally a no-op.
+-- The UserChatThread table is created in 20260516090000_add_chat_threads,
+-- so any ALTER on that table must happen after that migration.

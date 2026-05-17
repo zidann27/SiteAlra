@@ -5,6 +5,9 @@ export type SessionUser = {
 };
 
 const SESSION_KEY = "sitealra_session_v1";
+const CHAT_ACTIVE_THREAD_KEY_PREFIX = "sitealra_chat_active_thread";
+const CHAT_THREADS_KEY_PREFIX = "sitealra_chat_threads";
+const CHAT_MESSAGES_KEY = "sitealra_chat_messages";
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
 
@@ -117,10 +120,56 @@ export function getGoogleAuthUrl(): string {
   return apiUrl("/auth/google");
 }
 
+export function getFacebookAuthUrl(): string {
+  return apiUrl("/auth/facebook");
+}
+
 export async function signOut(): Promise<void> {
+  const session = getSessionUser();
+  const userKey = session?.id || session?.email || "anon";
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(`${CHAT_ACTIVE_THREAD_KEY_PREFIX}:${userKey}`);
+  localStorage.removeItem(`${CHAT_THREADS_KEY_PREFIX}:${userKey}`);
+  localStorage.removeItem(CHAT_MESSAGES_KEY);
   await fetch(apiUrl("/auth/logout"), {
     method: "POST",
     credentials: "include",
   });
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await fetch(apiUrl("/auth/password/forgot"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+
+  const result = await parseJson<{ success?: boolean; error?: string }>(
+    response,
+  );
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || "Gagal mengirim email reset.");
+  }
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  const response = await fetch(apiUrl("/auth/password/reset"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token, password }),
+  });
+
+  const result = await parseJson<{ success?: boolean; error?: string }>(
+    response,
+  );
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || "Reset password gagal.");
+  }
 }
