@@ -13,6 +13,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import DataDeletionPage from "./pages/DataDeletionPage";
+import TermsAndConditionsPage from "./pages/TermsAndConditionsPage";
 import ProtectedRoute from "./components/dashboard/ProtectedRoute";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import OverviewPage from "./pages/dashboard/OverviewPage";
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route

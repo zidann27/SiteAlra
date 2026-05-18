@@ -20,9 +20,7 @@ export default function DataDeletionPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
                 Data Deletion Instructions
               </h1>
-              <p className="mt-3 text-sm text-zinc-600">
-                Terakhir diperbarui: 18 Mei 2026
-              </p>
+
               <p className="mt-4 max-w-2xl text-base text-zinc-700">
                 Kami siap membantu penghapusan akun dan data Anda dengan proses
                 yang jelas serta terukur.

@@ -278,7 +278,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 transition-colors">
-                Domain name (optional)
+                Domain name (optional default)
               </label>
               <input
                 type="text"

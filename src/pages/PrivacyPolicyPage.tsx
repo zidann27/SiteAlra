@@ -20,9 +20,7 @@ export default function PrivacyPolicyPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
                 Privacy Policy
               </h1>
-              <p className="mt-3 text-sm text-zinc-600">
-                Terakhir diperbarui: 18 Mei 2026
-              </p>
+
               <p className="mt-4 max-w-2xl text-base text-zinc-700">
                 Kami menjaga privasi pengguna SiteAlra dengan transparan.
                 Berikut ini ringkasan data yang kami kumpulkan, alasan
