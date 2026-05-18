@@ -377,7 +377,35 @@ function toNumber(value: unknown, fallback = 0): number {
   return fallback;
 }
 
-app.use(cors({ origin: corsOrigin, credentials: true }));
+function estimateDataUrlBytes(value?: string | null): number | null {
+  if (!value || typeof value !== "string") return null;
+  const marker = "base64,";
+  const index = value.indexOf(marker);
+  if (index === -1) return value.length;
+  const base64 = value.slice(index + marker.length);
+  return Math.floor(base64.length * 0.75);
+}
+
+const allowedOrigins = new Set(
+  [process.env.CORS_ORIGINS, corsOrigin, frontendUrl]
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(","))
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => value.replace(/\/+$/, "")),
+);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.has("*")) return callback(null, true);
+      if (allowedOrigins.has(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"), false);
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
@@ -932,10 +960,16 @@ app.put("/api/owner/profile", requireAuth, async (req, res) => {
     });
 
     return res.json({ success: true, data: profile });
-  } catch {
-    return res
-      .status(500)
-      .json({ success: false, error: "Gagal menyimpan settings." });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const debugErrors = process.env.DEBUG_ERRORS === "true";
+    console.error("[PUT /api/owner/profile] Error:", msg);
+    return res.status(500).json({
+      success: false,
+      error: debugErrors
+        ? `Gagal menyimpan settings. ${msg}`
+        : "Gagal menyimpan settings.",
+    });
   }
 });
 

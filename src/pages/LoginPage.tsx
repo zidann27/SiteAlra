@@ -142,11 +142,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-sm flex flex-col relative h-full justify-center z-10 pt-12 sm:pt-0">
           {/* Logo (Hanya Tulisan) */}
-          <div className="mb-4 sm:mb-6">
-            <span className="text-lg sm:text-2xl font-bold tracking-tighter text-zinc-950">
-              SiteAlra.
-            </span>
-          </div>
+          <div className="mb-4 sm:mb-6"></div>
           {/* Header Content */}
           <div className="mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-zinc-900 mb-2 sm:mb-3">
