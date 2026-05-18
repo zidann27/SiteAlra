@@ -104,10 +104,16 @@ type AuthedRequest = express.Request & { user: AuthUser };
 const authCookieName = "sitealra_token";
 const oauthStateCookieName = "sitealra_oauth_state";
 const facebookStateCookieName = "sitealra_oauth_state_fb";
+const isProduction = process.env.NODE_ENV === "production";
+const cookieSecure = process.env.COOKIE_SECURE
+  ? String(process.env.COOKIE_SECURE) === "true"
+  : isProduction;
+const cookieSameSite = cookieSecure ? ("none" as const) : ("lax" as const);
+
 const authCookieOptions = {
   httpOnly: true,
-  sameSite: "lax" as const,
-  secure: false,
+  sameSite: cookieSameSite,
+  secure: cookieSecure,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: "/",
 };
