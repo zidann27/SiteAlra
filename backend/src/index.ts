@@ -28,6 +28,9 @@ try {
   if (!anyPrisma.userProfile && anyPrisma.userprofile) {
     anyPrisma.userProfile = anyPrisma.userprofile;
   }
+  if (!anyPrisma.passwordResetToken && anyPrisma.passwordresettoken) {
+    anyPrisma.passwordResetToken = anyPrisma.passwordresettoken;
+  }
   if (!anyPrisma.userProduct && anyPrisma.userproduct) {
     anyPrisma.userProduct = anyPrisma.userproduct;
   }
@@ -128,12 +131,27 @@ function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function hashEmailForLogs(email: string): string {
+  return crypto
+    .createHash("sha256")
+    .update(email.trim().toLowerCase())
+    .digest("hex")
+    .slice(0, 12);
+}
+
 async function sendResetEmail(input: {
   email: string;
   resetUrl: string;
 }): Promise<void> {
   if (!smtpUser || !smtpPass || !smtpFrom) {
-    throw new Error("SMTP not configured");
+    const missing = [
+      !smtpUser ? "SMTP_USER" : null,
+      !smtpPass ? "SMTP_PASS" : null,
+      !smtpFrom ? "SMTP_FROM" : null,
+    ].filter(Boolean);
+    throw new Error(
+      `SMTP not configured${missing.length ? ` (missing: ${missing.join(", ")})` : ""}`,
+    );
   }
 
   const transporter = nodemailer.createTransport({
@@ -300,13 +318,29 @@ Tim SiteAlra`;
 </html>
 `;
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: smtpFrom,
     to: input.email,
     subject: "Reset Password SiteAlra",
     text: textBody,
     html: htmlBody,
   });
+
+  const accepted = Array.isArray((info as any)?.accepted)
+    ? (info as any).accepted
+    : [];
+  const rejected = Array.isArray((info as any)?.rejected)
+    ? (info as any).rejected
+    : [];
+  console.info(
+    "[reset-email] sent",
+    JSON.stringify({
+      toHash: hashEmailForLogs(input.email),
+      messageId: (info as any)?.messageId || null,
+      acceptedCount: accepted.length,
+      rejectedCount: rejected.length,
+    }),
+  );
 }
 
 function getAuthUser(req: express.Request): AuthUser | null {
@@ -521,6 +555,14 @@ app.post("/auth/password/forgot", async (req, res) => {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user || !user.passwordHash) {
+    console.info(
+      "[forgot-password] skip",
+      JSON.stringify({
+        emailHash: hashEmailForLogs(email),
+        reason: !user ? "user_not_found" : "oauth_or_no_password",
+        provider: user?.provider ?? null,
+      }),
+    );
     return res.json({ success: true });
   }
 
@@ -544,7 +586,12 @@ app.post("/auth/password/forgot", async (req, res) => {
 
   try {
     await sendResetEmail({ email, resetUrl });
-  } catch {
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(
+      "[forgot-password] send failed",
+      JSON.stringify({ emailHash: hashEmailForLogs(email), error: msg }),
+    );
     return res
       .status(500)
       .json({ success: false, error: "Gagal mengirim email reset." });

@@ -21,7 +21,9 @@ export default function ForgotPasswordPage() {
       await requestPasswordReset(email.trim());
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengirim email reset.");
+      setError(
+        err instanceof Error ? err.message : "Gagal mengirim email reset.",
+      );
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,9 @@ export default function ForgotPasswordPage() {
             ].map(({ step, label }) => (
               <div key={step} className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-blue-600/30 border border-blue-500/40 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-300 text-xs font-bold">{step}</span>
+                  <span className="text-blue-300 text-xs font-bold">
+                    {step}
+                  </span>
                 </div>
                 <span className="text-zinc-400 text-sm">{label}</span>
               </div>
@@ -116,10 +120,18 @@ export default function ForgotPasswordPage() {
               <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Send size={22} className="text-emerald-600" />
               </div>
-              <h3 className="font-semibold text-emerald-800 mb-2">Email Terkirim!</h3>
+              <h3 className="font-semibold text-emerald-800 mb-2">
+                Email Terkirim!
+              </h3>
               <p className="text-emerald-700 text-sm leading-relaxed">
-                Jika email <span className="font-medium">{email}</span> terdaftar,
-                link reset password sudah dikirim. Cek kotak masuk kamu.
+                Jika email <span className="font-medium">{email}</span>{" "}
+                terdaftar, link reset password sudah dikirim. Cek kotak masuk
+                kamu.
+              </p>
+              <p className="text-emerald-700/90 text-sm leading-relaxed mt-3">
+                Jika belum masuk, cek folder Spam/Promotions. Untuk akun yang
+                dibuat lewat Google/Facebook, reset password tidak
+                berlaku—silakan login pakai Google/Facebook.
               </p>
               <Link
                 to="/login"
