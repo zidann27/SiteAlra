@@ -134,14 +134,14 @@ model userprofile {
   userId              String   @unique(map: "UserProfile_userId_key")
   name                String   @default("")
   businessType        String   @default("kuliner")
-  shortDescription    String   @default("")
-  targetCustomers     String   @default("")
+  shortDescription    String   @default("") @db.Text
+  targetCustomers     String   @default("") @db.Text
   style               String   @default("modern")
   ownerEmail          String   @default("")
   phone               String   @default("")
   publicEmail         String   @default("")
-  address             String   @default("")
-  hours               String   @default("")
+  address             String   @default("") @db.Text
+  hours               String   @default("") @db.Text
   domainName          String   @default("")
   logoDataUrl         String?  @db.LongText
   contentImageDataUrl String?  @db.LongText
