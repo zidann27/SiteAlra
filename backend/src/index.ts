@@ -889,7 +889,7 @@ app.get("/api/owner/analytics/visitors-7d", requireAuth, async (req, res) => {
   const rows = (await prisma.$queryRaw(
     Prisma.sql`
       SELECT visitDate, count
-      FROM SiteDailyVisit
+      FROM sitedailyvisit
       WHERE siteId = ${latestSite.id}
         AND visitDate >= ${dateKeys[0]}
       ORDER BY visitDate ASC
@@ -1645,7 +1645,7 @@ app.get("/api/sites/:slug", async (req, res) => {
     }),
     prisma.$executeRaw(
       Prisma.sql`
-        INSERT INTO SiteDailyVisit (id, siteId, visitDate, count, createdAt, updatedAt)
+        INSERT INTO sitedailyvisit (id, siteId, visitDate, count, createdAt, updatedAt)
         VALUES (${`${site.id}:${todayKey}`}, ${site.id}, ${todayKey}, 1, NOW(), NOW())
         ON DUPLICATE KEY UPDATE
           count = count + 1,
