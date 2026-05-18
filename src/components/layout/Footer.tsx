@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Zap, Heart } from "lucide-react";
+import { Zap } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -50,37 +50,30 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Kategori</h4>
+            <h4 className="text-white font-semibold mb-4 text-sm">Legal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <span className="hover:text-white cursor-default transition-colors">
-                  Kuliner
-                </span>
+                <Link
+                  to="/privacy-policy"
+                  className="hover:text-white transition-colors"
+                >
+                  Privacy Policy
+                </Link>
               </li>
               <li>
-                <span className="hover:text-white cursor-default transition-colors">
-                  Jasa & Layanan
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-white cursor-default transition-colors">
-                  Fashion
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-white cursor-default transition-colors">
-                  Kecantikan
-                </span>
+                <Link
+                  to="/data-deletion"
+                  className="hover:text-white transition-colors"
+                >
+                  Data Deletion
+                </Link>
               </li>
             </ul>
           </div>
         </div>
-
-        <div className="mt-10 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs">© 2026 SiteAlra. Hak cipta dilindungi.</p>
-          <p className="text-xs flex items-center gap-1">
-            Dibuat dengan <Heart size={12} className="text-red-400" /> untuk
-            UMKM Indonesia
+        <div className="mt-10 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <p className="text-xs text-center">
+            © 2026 SiteAlra. Hak cipta dilindungi.
           </p>
         </div>
       </div>

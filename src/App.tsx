@@ -11,6 +11,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import DataDeletionPage from "./pages/DataDeletionPage";
 import ProtectedRoute from "./components/dashboard/ProtectedRoute";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import OverviewPage from "./pages/dashboard/OverviewPage";
@@ -44,6 +46,8 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/data-deletion" element={<DataDeletionPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route
