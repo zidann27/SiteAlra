@@ -159,6 +159,10 @@ async function sendResetEmail(input: {
     port: smtpPort,
     secure: smtpPort === 465,
     auth: { user: smtpUser, pass: smtpPass },
+    // Fail fast in production environments where outbound SMTP may be blocked.
+    connectionTimeout: 12_000,
+    greetingTimeout: 12_000,
+    socketTimeout: 12_000,
   });
 
   const textBody = `Halo,
@@ -587,11 +591,24 @@ app.post("/auth/password/forgot", async (req, res) => {
   try {
     await sendResetEmail({ email, resetUrl });
   } catch (error) {
+    const anyErr = error as any;
     const msg = error instanceof Error ? error.message : String(error);
     console.error(
       "[forgot-password] send failed",
       JSON.stringify({ emailHash: hashEmailForLogs(email), error: msg }),
     );
+    if (anyErr && (anyErr.code || anyErr.command || anyErr.response)) {
+      console.error(
+        "[forgot-password] send failed details",
+        JSON.stringify({
+          emailHash: hashEmailForLogs(email),
+          code: anyErr.code || null,
+          command: anyErr.command || null,
+          response: anyErr.response || null,
+          responseCode: anyErr.responseCode || null,
+        }),
+      );
+    }
     return res
       .status(500)
       .json({ success: false, error: "Gagal mengirim email reset." });
