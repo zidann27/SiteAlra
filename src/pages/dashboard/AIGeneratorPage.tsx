@@ -181,7 +181,7 @@ export default function AIGeneratorPage() {
       navigate("/dashboard/preview", { replace: true });
     } catch {
       setError(
-        "Deskripsi singkat terlalu panjang silahkan buat lebih ringkas.",
+        "Deskripsi singkat terlalu panjang silahkan buat lebih ringkas",
       );
     } finally {
       setLoading(false);
