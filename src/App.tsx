@@ -49,7 +49,10 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
-        <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+        <Route
+          path="/terms-and-conditions"
+          element={<TermsAndConditionsPage />}
+        />
 
         <Route element={<ProtectedRoute />}>
           <Route

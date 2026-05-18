@@ -50,7 +50,9 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Bantuan & Legal</h4>
+            <h4 className="text-white font-semibold mb-4 text-sm">
+              Bantuan & Legal
+            </h4>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
