@@ -181,7 +181,7 @@ export default function AIGeneratorPage() {
       navigate("/dashboard/preview", { replace: true });
     } catch {
       setError(
-        "Gagal generate website. Coba jalankan backend API atau coba lagi.",
+        "Deskripsi singkat terlalu panjang silahkan buat lebih ringkas.",
       );
     } finally {
       setLoading(false);
