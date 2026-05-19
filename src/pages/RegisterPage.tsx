@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import {
-  getFacebookAuthUrl,
+  // getFacebookAuthUrl, // Dinonaktifkan - butuh domain custom untuk production
   getGoogleAuthUrl,
   registerWithPassword,
 } from "../lib/auth";
@@ -192,34 +192,28 @@ export default function RegisterPage() {
                 "Daftar Sekarang"
               )}
             </button>
+
           </form>
 
-          <div className="mt-4">
-            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-zinc-400 text-center">
+          <div className="mt-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-400 text-center">
               atau
             </p>
 
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-4 flex items-center justify-center">
+              {/* Tombol Facebook dinonaktifkan - butuh domain custom untuk production Facebook OAuth
               <button
                 type="button"
                 aria-label="Lanjutkan dengan Facebook"
-                onClick={() => {
-                  window.location.href = getFacebookAuthUrl();
-                }}
+                onClick={() => { window.location.href = getFacebookAuthUrl(); }}
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                >
-                  <path
-                    fill="#1877F2"
-                    d="M24 12.07C24 5.405 18.627 0 12 0S0 5.405 0 12.07c0 6.022 4.388 11.023 10.125 11.93v-8.44H7.078v-3.49h3.047V9.43c0-3.03 1.792-4.71 4.533-4.71 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.49 0-1.953.93-1.953 1.887v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.093 24 18.092 24 12.07z"
-                  />
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+                  <path fill="#1877F2" d="M24 12.07C24 5.405 18.627 0 12 0S0 5.405 0 12.07c0 6.022 4.388 11.023 10.125 11.93v-8.44H7.078v-3.49h3.047V9.43c0-3.03 1.792-4.71 4.533-4.71 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.49 0-1.953.93-1.953 1.887v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.093 24 18.092 24 12.07z" />
                 </svg>
                 Facebook
               </button>
+              */}
 
               <button
                 type="button"
@@ -229,28 +223,13 @@ export default function RegisterPage() {
                 }}
                 className="inline-flex items-center justify-center gap-3 px-5 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-sm hover:border-blue-200 hover:text-blue-700"
               >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                >
-                  <path
-                    fill="#EA4335"
-                    d="M12 10.2v3.9h5.48c-.22 1.3-1.52 3.82-5.48 3.82-3.3 0-5.99-2.7-5.99-6.02 0-3.32 2.69-6.02 5.99-6.02 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 6.98 2.4 2.88 6.53 2.88 11.9c0 5.37 4.1 9.5 9.12 9.5 5.27 0 8.74-3.72 8.74-8.97 0-.6-.06-1.05-.14-1.5H12z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M3.45 7.42l3.21 2.35c.87-2.62 3.26-4.47 5.34-4.47 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 8.19 2.4 4.88 4.6 3.45 7.42z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M12 21.4c2.63 0 4.84-.87 6.46-2.36l-3.08-2.5c-.86.58-1.98.98-3.38.98-2.47 0-4.57-1.63-5.31-3.88l-3.23 2.49c1.42 2.8 4.36 4.87 8.54 4.87z"
-                  />
-                  <path
-                    fill="#4285F4"
-                    d="M20.6 12.07c0-.58-.06-1.05-.14-1.5H12v3.9h5.48c-.29 1.73-1.52 3.02-3.08 3.88l3.08 2.5c1.8-1.67 2.82-4.12 2.82-7.78z"
-                  />
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+                  <path fill="#EA4335" d="M12 10.2v3.9h5.48c-.22 1.3-1.52 3.82-5.48 3.82-3.3 0-5.99-2.7-5.99-6.02 0-3.32 2.69-6.02 5.99-6.02 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 6.98 2.4 2.88 6.53 2.88 11.9c0 5.37 4.1 9.5 9.12 9.5 5.27 0 8.74-3.72 8.74-8.97 0-.6-.06-1.05-.14-1.5H12z" />
+                  <path fill="#34A853" d="M3.45 7.42l3.21 2.35c.87-2.62 3.26-4.47 5.34-4.47 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 8.19 2.4 4.88 4.6 3.45 7.42z" />
+                  <path fill="#FBBC05" d="M12 21.4c2.63 0 4.84-.87 6.46-2.36l-3.08-2.5c-.86.58-1.98.98-3.38.98-2.47 0-4.57-1.63-5.31-3.88l-3.23 2.49c1.42 2.8 4.36 4.87 8.54 4.87z" />
+                  <path fill="#4285F4" d="M20.6 12.07c0-.58-.06-1.05-.14-1.5H12v3.9h5.48c-.29 1.73-1.52 3.02-3.08 3.88l3.08 2.5c1.8-1.67 2.82-4.12 2.82-7.78z" />
                 </svg>
+
                 Google
               </button>
             </div>
