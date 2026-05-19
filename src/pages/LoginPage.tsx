@@ -66,8 +66,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row font-sans selection:bg-blue-100 bg-white overflow-hidden">
-      {/* ── LEFT PANEL ── */}
-      <div className="w-full md:w-1/2 bg-[#020617] flex items-center justify-center p-8 sm:p-16 min-h-[40vh] md:min-h-screen relative overflow-hidden">
+      {/* ── LEFT PANEL — disembunyikan di mobile ── */}
+      <div className="hidden md:flex md:w-1/2 bg-[#020617] items-center justify-center p-8 sm:p-16 min-h-screen relative overflow-hidden">
         {/* Background image */}
         <div
           className="absolute inset-0 z-0 opacity-30 bg-cover bg-center transition-transform duration-1000 hover:scale-110"
@@ -123,7 +123,7 @@ export default function LoginPage() {
       {/* =========================================
           RIGHT PANEL: THE LOGIN AREA (PUTIH + BLUR)
       ========================================= */}
-      <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-4 sm:p-8 md:p-16 min-h-[60vh] md:min-h-screen relative">
+      <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-6 sm:p-10 md:p-16 min-h-screen relative">
         {/* Efek Blur halus di latar belakang */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
