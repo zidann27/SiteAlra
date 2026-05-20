@@ -7,19 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model passwordresettoken {
+model PasswordResetToken {
   id        String   @id
   userId    String
   tokenHash String   @unique(map: "PasswordResetToken_tokenHash_key")
   expiresAt DateTime
   createdAt DateTime @default(now())
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "PasswordResetToken_userId_fkey")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "PasswordResetToken_userId_fkey")
 
   @@index([expiresAt], map: "PasswordResetToken_expiresAt_idx")
   @@index([userId], map: "PasswordResetToken_userId_idx")
+  @@map("passwordresettoken")
 }
 
-model product {
+model Product {
   id          String   @id
   siteId      String
   name        String
@@ -30,13 +31,14 @@ model product {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime
-  site        site     @relation(fields: [siteId], references: [id], onDelete: Cascade, map: "Product_siteId_fkey")
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade, map: "Product_siteId_fkey")
 
   @@index([isActive], map: "Product_isActive_idx")
   @@index([siteId], map: "Product_siteId_idx")
+  @@map("product")
 }
 
-model site {
+model Site {
   id                  String           @id
   businessName        String
   businessDescription String           @db.LongText
@@ -46,74 +48,79 @@ model site {
   viewCount           Int              @default(0)
   ownerId             String?
   createdAt           DateTime         @default(now())
-  product             product[]
-  user                user?            @relation(fields: [ownerId], references: [id], map: "Site_ownerId_fkey")
-  sitedailyvisit      sitedailyvisit[]
+  products            Product[]
+  owner               User?            @relation(fields: [ownerId], references: [id], map: "Site_ownerId_fkey")
+  dailyVisits         SiteDailyVisit[]
 
   @@index([ownerId], map: "Site_ownerId_fkey")
+  @@map("site")
 }
 
-model sitedailyvisit {
+model SiteDailyVisit {
   id        String   @id
   siteId    String
   visitDate DateTime @db.Date
   count     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime
-  site      site     @relation(fields: [siteId], references: [id], onDelete: Cascade, map: "SiteDailyVisit_siteId_fkey")
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade, map: "SiteDailyVisit_siteId_fkey")
 
   @@unique([siteId, visitDate], map: "SiteDailyVisit_siteId_visitDate_key")
   @@index([visitDate], map: "SiteDailyVisit_visitDate_idx")
+  @@map("sitedailyvisit")
 }
 
-model user {
-  id                 String               @id
-  email              String               @unique(map: "User_email_key")
-  passwordHash       String?
-  name               String?
-  provider           String?              @default("local")
-  providerId         String?
-  createdAt          DateTime             @default(now())
-  passwordresettoken passwordresettoken[]
-  site               site[]
-  userchatmessage    userchatmessage[]
-  userchatthread     userchatthread[]
-  userproduct        userproduct[]
-  userprofile        userprofile?
+model User {
+  id             String               @id
+  email          String               @unique(map: "User_email_key")
+  passwordHash   String?
+  name           String?
+  provider       String?              @default("local")
+  providerId     String?
+  createdAt      DateTime             @default(now())
+  passwordResets PasswordResetToken[]
+  sites          Site[]
+  chatMessages   UserChatMessage[]
+  chatThreads    UserChatThread[]
+  products       UserProduct[]
+  profile        UserProfile?
 
   @@unique([provider, providerId], map: "User_provider_providerId_key")
   @@index([provider], map: "User_provider_idx")
+  @@map("user")
 }
 
-model userchatmessage {
-  id             String         @id
-  userId         String
-  role           String
-  content        String         @db.LongText
-  createdAt      DateTime       @default(now())
-  threadId       String
-  userchatthread userchatthread @relation(fields: [threadId], references: [id], onDelete: Cascade, map: "UserChatMessage_threadId_fkey")
-  user           user           @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserChatMessage_userId_fkey")
+model UserChatMessage {
+  id        String         @id
+  userId    String
+  role      String
+  content   String         @db.LongText
+  createdAt DateTime       @default(now())
+  threadId  String
+  thread    UserChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade, map: "UserChatMessage_threadId_fkey")
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserChatMessage_userId_fkey")
 
   @@index([createdAt], map: "UserChatMessage_createdAt_idx")
   @@index([threadId], map: "UserChatMessage_threadId_idx")
   @@index([userId], map: "UserChatMessage_userId_idx")
+  @@map("userchatmessage")
 }
 
-model userchatthread {
-  id              String            @id
-  userId          String
-  title           String            @default("Chat")
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @default(now())
-  userchatmessage userchatmessage[]
-  user            user              @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserChatThread_userId_fkey")
+model UserChatThread {
+  id        String            @id
+  userId    String
+  title     String            @default("Chat")
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+  messages  UserChatMessage[]
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserChatThread_userId_fkey")
 
   @@index([updatedAt], map: "UserChatThread_updatedAt_idx")
   @@index([userId], map: "UserChatThread_userId_idx")
+  @@map("userchatthread")
 }
 
-model userproduct {
+model UserProduct {
   id           String   @id
   userId       String
   name         String
@@ -124,12 +131,13 @@ model userproduct {
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime
-  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserProduct_userId_fkey")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserProduct_userId_fkey")
 
   @@index([userId], map: "UserProduct_userId_idx")
+  @@map("userproduct")
 }
 
-model userprofile {
+model UserProfile {
   id                  String   @id
   userId              String   @unique(map: "UserProfile_userId_key")
   name                String   @default("")
@@ -151,5 +159,7 @@ model userprofile {
   visitorTotal        Int      @default(0)
   createdAt           DateTime @default(now())
   updatedAt           DateTime
-  user                user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserProfile_userId_fkey")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "UserProfile_userId_fkey")
+
+  @@map("userprofile")
 }
