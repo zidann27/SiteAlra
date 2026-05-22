@@ -245,7 +245,6 @@ export default function LoginPage() {
                 "Masuk"
               )}
             </button>
-
           </form>
 
           <div className="mt-6">
@@ -267,7 +266,6 @@ export default function LoginPage() {
               </button>
               */}
 
-
             <div className="mt-4 flex items-center justify-center">
               <button
                 type="button"
@@ -275,15 +273,27 @@ export default function LoginPage() {
                 onClick={() => {
                   window.location.href = getGoogleAuthUrl();
                 }}
-                className="flex-1 sm:flex-none sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 px-2 sm:px-5 py-2 sm:py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-2xl transition-all text-xs sm:text-sm hover:border-blue-200 hover:text-blue-700"
+                className="inline-flex items-center justify-center gap-3 px-6 py-3 bg-white border border-zinc-200 text-zinc-800 font-medium rounded-full transition-all text-sm shadow-sm hover:border-blue-200 hover:text-blue-700 hover:shadow"
               >
-                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5">
-                  <path fill="#EA4335" d="M12 10.2v3.9h5.48c-.22 1.3-1.52 3.82-5.48 3.82-3.3 0-5.99-2.7-5.99-6.02 0-3.32 2.69-6.02 5.99-6.02 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 6.98 2.4 2.88 6.53 2.88 11.9c0 5.37 4.1 9.5 9.12 9.5 5.27 0 8.74-3.72 8.74-8.97 0-.6-.06-1.05-.14-1.5H12z" />
-                  <path fill="#34A853" d="M3.45 7.42l3.21 2.35c.87-2.62 3.26-4.47 5.34-4.47 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 8.19 2.4 4.88 4.6 3.45 7.42z" />
-                  <path fill="#FBBC05" d="M12 21.4c2.63 0 4.84-.87 6.46-2.36l-3.08-2.5c-.86.58-1.98.98-3.38.98-2.47 0-4.57-1.63-5.31-3.88l-3.23 2.49c1.42 2.8 4.36 4.87 8.54 4.87z" />
-                  <path fill="#4285F4" d="M20.6 12.07c0-.58-.06-1.05-.14-1.5H12v3.9h5.48c-.29 1.73-1.52 3.02-3.08 3.88l3.08 2.5c1.8-1.67 2.82-4.12 2.82-7.78z" />
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+                  <path
+                    fill="#EA4335"
+                    d="M12 10.2v3.9h5.48c-.22 1.3-1.52 3.82-5.48 3.82-3.3 0-5.99-2.7-5.99-6.02 0-3.32 2.69-6.02 5.99-6.02 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 6.98 2.4 2.88 6.53 2.88 11.9c0 5.37 4.1 9.5 9.12 9.5 5.27 0 8.74-3.72 8.74-8.97 0-.6-.06-1.05-.14-1.5H12z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M3.45 7.42l3.21 2.35c.87-2.62 3.26-4.47 5.34-4.47 1.88 0 3.14.8 3.86 1.48l2.63-2.53C16.9 3.36 14.66 2.4 12 2.4 8.19 2.4 4.88 4.6 3.45 7.42z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M12 21.4c2.63 0 4.84-.87 6.46-2.36l-3.08-2.5c-.86.58-1.98.98-3.38.98-2.47 0-4.57-1.63-5.31-3.88l-3.23 2.49c1.42 2.8 4.36 4.87 8.54 4.87z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M20.6 12.07c0-.58-.06-1.05-.14-1.5H12v3.9h5.48c-.29 1.73-1.52 3.02-3.08 3.88l3.08 2.5c1.8-1.67 2.82-4.12 2.82-7.78z"
+                  />
                 </svg>
-                <span className="hidden sm:inline">Google</span>
+                Google
               </button>
             </div>
           </div>
